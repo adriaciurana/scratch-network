@@ -2,13 +2,13 @@ import sys
 import os
 import numpy as np
 
-sys.path.append(os.path.dirname(__file__)+"../")
-from network import Network
-from network.layers import Input
-from network.layers import FC
-from network.layers import ReLU
-from network.losses import Loss
-from network.metrics import Metric
+sys.path.append(os.path.dirname(__file__)+"../../")
+from scratchnetwork import Network
+from scratchnetwork.layers import Input
+from scratchnetwork.layers import FC
+from scratchnetwork.layers import ReLU
+from scratchnetwork.losses import Loss
+from scratchnetwork.metrics import Metric
 net = Network()
 inputX = net.Node("Input", Input, [10])
 inputY = net.Node("Y", Input, [1])
