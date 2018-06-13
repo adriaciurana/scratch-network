@@ -1,3 +1,4 @@
+from ..backend.exceptions import Exceptions
 class Layer(object):
 	def __init__(self, node, weights_names=None, func_repr_weights=lambda x: x, params={}):
 		self.node = node
@@ -19,7 +20,7 @@ class Layer(object):
 	def computeSize(self):
 		if 'same_input_shape' in self.params:
 			if self.in_size[:1] == self.in_size[:-1]:
-				raise Network.DifferentInputShape("El tipo de datos en la capa " \
+				raise Exceptions.DifferentInputShape("El tipo de datos en la capa " \
 					 + self.node.name + " debe ser igual en todos los casos. "+str(self.in_size))
 
 	def compile(self):
@@ -32,11 +33,11 @@ class Layer(object):
 
 		if 'number_of_inputs' in self.params:
 			if self.params['number_of_inputs'] < len(self.node.prevs):
-				raise Network.NumberInputsException("Numero de entradas excedidas (" \
+				raise Exceptions.NumberInputsException("Numero de entradas excedidas (" \
 				 + self.params['number_of_inputs'] + ") en " + type(self).__name__ + ":" + self.node.name)
 			
 			elif self.params['number_of_inputs'] > len(self.node.prevs):
-				raise Network.NumberInputsException("Numero de entradas inferiores (" \
+				raise Exceptions.NumberInputsException("Numero de entradas inferiores (" \
 				 + self.params['number_of_inputs'] + ") en " + type(self).__name__ + ":" + self.node.name)
 		
 		if 'regularization' in self.params:

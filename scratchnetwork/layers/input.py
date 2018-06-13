@@ -1,5 +1,6 @@
 from .layer import Layer
 import numpy as np
+from ..backend.exceptions import Exceptions
 class Input(Layer):
 	def __init__(self, node, shape, params={}):
 		params['compute_backward'] = False
@@ -12,7 +13,7 @@ class Input(Layer):
 
 	def fill(self, data):
 		if data.shape[1:] != self.shape:
-			raise Network.InputShapeException("Los datos en la capa Input: " + self.node.name + " tiene un tamaño incorrecto. \
+			raise Exceptions.InputShapeException("Los datos en la capa Input: " + self.node.name + " tiene un tamaño incorrecto. \
 				Son "+str(data.shape[1:])+" y deberian ser " + str(self.shape) + ".")
 		if self.data is not None:
 			self.old_shape = self.data.shape
@@ -31,7 +32,7 @@ class Input(Layer):
 	def firstForward(self, inputs):
 		super(Input, self).firstForward(inputs)
 		if self.data is None:
-			raise Network.InputNotFillException("La capa Input: " + self.node.name + " no ha sido llenada.")
+			raise Exceptions.InputNotFillException("La capa Input: " + self.node.name + " no ha sido llenada.")
 
 	def forward(self, inputs):
 		return self.data

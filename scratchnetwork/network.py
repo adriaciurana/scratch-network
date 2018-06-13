@@ -4,6 +4,7 @@ import copy
 from .node import Node
 from .layers.layer import Layer
 from .optimizers import SGD
+from .backend.exceptions import Exceptions
 class Network(object):
 	# Posibles estados de la red
 	class STATUS(object):
@@ -45,15 +46,15 @@ class Network(object):
 	"""
 	def testHasInputs(self):
 		if len(self.nodes_with_only_outputs) == 0:
-			raise Network.NotInputException("¡El grafo no tiene entrada!"+str([n for n in self.nodes_with_only_outputs]))
+			raise Exceptions.NotInputException("¡El grafo no tiene entrada!"+str([n for n in self.nodes_with_only_outputs]))
 	
 	def testHasOutputs(self):
 		if len(self.nodes_with_only_inputs) == 0:
-			raise Network.NotOutputException("¡El grafo no tiene salida!"+str([n for n in self.nodes_with_only_inputs]))
+			raise Exceptions.NotOutputException("¡El grafo no tiene salida!"+str([n for n in self.nodes_with_only_inputs]))
 
 	def testHasNotConnecteds(self):
 		if len(self.nodes_not_connected) > 0:
-			raise Network.NotConnectedException("¡Existen nodos sin conectar! "+str([n for n in self.nodes_not_connected]))
+			raise Exceptions.NotConnectedException("¡Existen nodos sin conectar! "+str([n for n in self.nodes_not_connected]))
 	
 	def testIsAcyclicGraph(self):
 		# definimos una estructura para saber el camino recorrido
@@ -63,7 +64,7 @@ class Network(object):
 		def exploreNode(node):
 			# Comprovamos que no este en el camino
 			if node in path_nodes:
-				raise Network.IsCyclicGraphException("¡El grafo es ciclico!")
+				raise Exceptions.IsCyclicGraphException("¡El grafo es ciclico!")
 			# Lo añadimos al camino
 			path_nodes.append(node)
 			# Avanzamos al siguiente nodo
@@ -210,30 +211,3 @@ class Network(object):
 
 	def get_weights(self, name):
 		return self.nodes[name].weights
-
-	"""
-		Excepciones
-
-	"""
-	class IsCyclicGraphException(Exception):
-		pass
-	class NotInputException(Exception):
-		pass
-	class NotOutputException(Exception):
-		pass
-	class NotFoundLayer(Exception):
-		pass
-	class InputShapeException(Exception):
-		pass
-	class InputNotFillException(Exception):
-		pass
-	class NumberInputsException(Exception):
-		pass
-	class NotConnectedException(Exception):
-		pass
-	class InconsistentWeightSize(Exception):
-		pass
-	class DifferentInputShape(Exception):
-		pass
-	class LayerHasNoFillMethod(Exception):
-		pass

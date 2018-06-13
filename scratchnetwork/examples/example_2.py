@@ -13,9 +13,9 @@ from scipy import ndimage
 from scipy import misc
 net = Network()
 inputX = net.Node("Input", Input, [10, 10, 1])
-inputY = net.Node("Y", Input, [6, 8, 1])
+inputY = net.Node("Y", Input, [10, 5, 1])
 
-B = net.Node("Output", Conv2D, 1, (5, 3))
+B = net.Node("Output", Conv2D, 1, (5, 3), (1, 2), 'same')
 
 L1 = net.Node("Loss", Loss)
 M1 = net.Node("Metric", Metric)
@@ -34,7 +34,7 @@ net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
 
 # Llenamos
 a = 2*(np.random.rand(1000, 10, 10, 1) - 0.5)
-b = np.zeros(shape=(1000, 6, 8, 1))
+b = np.zeros(shape=(1000, 10, 10, 1))
 
 s, k = 1, 2
 w = [np.exp(-z*z/(2*s*s))/np.sqrt(2*np.pi*s*s) for z in range(-k,k+1)]
@@ -47,11 +47,12 @@ print(w)
 wf = np.flipud(np.fliplr(w))
 for i in range(b.shape[0]):
 	for d in range(a.shape[-1]):
-		b[i,:,:,d] = signal.convolve2d(a[i,:,:,d], wf, 'valid')
+		b[i,:,:,d] = signal.convolve2d(a[i,:,:,d], wf, 'same')
+b = b[:,:,5:,:]
 
 batch_index = 0
 batch_size = 20
-for i in range(2000):
+for i in range(5000):
 	Xaux = a[batch_index:(batch_index + batch_size)]
 	Yaux = b[batch_index:(batch_index + batch_size)]
 	net.train_batch({'Input': Xaux}, {'Y': Yaux})
@@ -68,7 +69,7 @@ kernels = (1./(5*3))*np.sum(np.sum(kernels, axis=0), axis=0)
 kernels = np.flipud(np.fliplr(kernels))
 print(kernels)"""
 
-print(kernels.shape)
+print(kernels[0][0])
 import matplotlib.pylab as plt
 plt.subplot(1,2,1)
 plt.imshow(kernels[0][0])

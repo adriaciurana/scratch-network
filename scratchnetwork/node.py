@@ -1,5 +1,6 @@
 import numpy as np
 from .layers.layer import Layer
+from .backend.exceptions import Exceptions
 class Node(object):
 	INPUT, OUTPUT, MIDDLE, NOT_CONNECTED = range(4)
 	def __init__(self, network, name, layer, layer_args):
@@ -19,7 +20,7 @@ class Node(object):
 			layer_args = tuple([self] + list(layer_args))
 			self.layer = layer(*layer_args)
 		else:
-			raise Network.NotFoundLayer("La capa que has introducido no existe.")
+			raise Exceptions.NotFoundLayer("La capa que has introducido no existe.")
 
 		# relaciones que tiene el nodo
 		self.prevs = []
@@ -207,7 +208,7 @@ class Node(object):
 		try:
 			self.layer.fill(data)
 		except AttributeError:
-			raise Network.LayerHasNoFillMethod("La capa " + self.node.name + "(" + type(self).__name__ + ") no puede llenarse.")
+			raise Exceptions.LayerHasNoFillMethod("La capa " + self.node.name + "(" + type(self).__name__ + ") no puede llenarse.")
 	
 	def batchSize(self):
 		return self.layer.batch_size
