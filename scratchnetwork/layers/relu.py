@@ -16,9 +16,6 @@ class ReLU(Layer):
 		self.values.input = input
 		return input
 
-	def backward(self, doutput):
+	def derivatives(self, doutput):
 		partial = self.values.input > 0
 		return doutput*partial
-
-	def correctWeights(self, doutput):
-		pass

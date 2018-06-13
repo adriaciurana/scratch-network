@@ -12,11 +12,12 @@ class Loss(Layer):
 	def forward(self, inputs):
 		super(Loss, self).forward(inputs)
 		pred, true = inputs
-		out = np.reshape(pred, [pred.shape[0], -1]) - np.reshape(true, [true.shape[0], -1])
+		out = pred - true
 		self.values.out = out
-		return 0.5*np.mean(out**2, axis=0)
+		out = np.reshape(out, [true.shape[0], -1])
+		return 0.5*np.mean((out**2).flatten(), axis=0)
 
-	def backward(self, doutput=None):
+	def derivatives(self, doutput=None):
 		return self.values.out
 
 	def correctWeights(self, doutput):

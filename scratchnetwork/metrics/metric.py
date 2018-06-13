@@ -14,4 +14,4 @@ class Metric(Loss):
 		super(Loss, self).forward(inputs)
 		pred, true = inputs
 		out = np.reshape(pred, [pred.shape[0], -1]) - np.reshape(true, [true.shape[0], -1])
-		return np.sqrt(np.mean(out**2, axis=0))
+		return np.sqrt(np.mean((out**2).flatten(), axis=0))

@@ -1,8 +1,9 @@
 class Layer(object):
-	def __init__(self, node, params={}):
+	def __init__(self, node, weights_names=None, func_repr_weights=lambda x: x, params={}):
 		self.node = node
 		# pesos de la capa
-		self.weights = Layer.Weights()
+		self.weights = Layer.Weights(func_repr_weights)
+		self.weights_names = weights_names
 		# valores intermedios de la capa
 		self.values = Layer.Values()
 		# parametros de la capa
@@ -47,12 +48,14 @@ class Layer(object):
 	def forward(self, inputs):
 		pass
 	
-	def backward(self, doutput=None):
+	def derivatives(self, doutput=None):
 		raise NotImplemented
 	"""
 		WEIGHTS:
 	"""
 	class Weights(object):
+		def __init__(self, func_repr=lambda x: x):
+			self.func_repr = func_repr
 		def copy(self):
 			c = self.__class__
 			copy_weights_instance = c.__new__(c)
@@ -60,6 +63,11 @@ class Layer(object):
 			for w in self.__attrs__:
 				setattr(copy_weights_instance, w, copy.copy(getattr(self, w)))
 			return copy_weights_instance
+
+		def get(self, name):
+			if isinstance(self.func_repr, dict):
+				return self.func_repr[name](getattr(self, name))
+			return self.func_repr(getattr(self, name))
 
 	class Values(object):
 		def copy(self):
@@ -94,6 +102,17 @@ class Layer(object):
 		# realizamos la correccion con respecto al optimizador
 		setattr(self.weights, name, w + self.node.network.optimizer.step(dweight))
 
+	def correctWeights(self, dweights):
+		if isinstance(dweights, (list, tuple)):
+			for i, dw in enumerate(dweights):
+				# aplicamos las correciones a los pesos
+				self.correctWeight(self.weights_names[i], dw)
+		else:
+			self.correctWeight(self.weights_names[0], dweights)
+
+	"""
+		COPY
+	"""
 	def copy(self, node):
 		c = self.__class__
 		copy_layer_instance = c.__new__(c)

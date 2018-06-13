@@ -93,14 +93,21 @@ class Node(object):
 		# Obtenemos las derivadas de las proximas salidas
 		doutput = self.temp_backward_result
 		if has_any_backward_to_compute:
-			backward = self.layer.backward(doutput)
+			unpack_derivatives = self.layer.derivatives(doutput)
+			if isinstance(unpack_derivatives, (list, tuple)):
+				backward, dweights = unpack_derivatives
+			else:
+				backward = unpack_derivatives
+				dweights = None
+
 		else:
 			backward = None
+			dweights = None
 
 		# Transferimos las contribuciones dentro de la capa para corregir los pesos internos
 		# Es importante hacerlo despues del backward, porque este paso variara el valor de los pesos internos
-		if self.layer.is_trainable:
-			self.layer.correctWeights(doutput)
+		if self.layer.is_trainable and dweights is not None:
+			self.layer.correctWeights(dweights)
 		return backward
 	
 	def backpropagation(self, is_loss = False):
@@ -203,7 +210,7 @@ class Node(object):
 			raise Network.LayerHasNoFillMethod("La capa " + self.node.name + "(" + type(self).__name__ + ") no puede llenarse.")
 	
 	def batchSize(self):
-		return self.layer.batchSize()
+		return self.layer.batch_size
 
 	def copy(self, copy_layer=False, name_prepend=''):
 		c = self.__class__
@@ -221,3 +228,8 @@ class Node(object):
 			copy_node_instance.layer = self.layer 
 		
 		return copy_node_instance
+
+	""" properties """
+	@property
+	def weights(self):
+		return self.layer.weights

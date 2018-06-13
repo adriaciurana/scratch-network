@@ -208,6 +208,9 @@ class Network(object):
 				graph.add_edge(pydot.Edge(n.name, nn.name))
 		graph.write_png(filestr)
 
+	def get_weights(self, name):
+		return self.nodes[name].weights
+
 	"""
 		Excepciones
 
