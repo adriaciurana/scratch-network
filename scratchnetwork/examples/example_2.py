@@ -29,9 +29,8 @@ L1.addPrev(inputY)
 M1.addPrev(B)
 M1.addPrev(inputY)
 
-#net.compile(losses=[L1], metrics=[M1])
-#net.start(inputs=[inputX], outputs=[B])
-#net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
+net.compile(losses=[L1], metrics=[M1])
+net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
 
 # Llenamos
 a = 2*(np.random.rand(1000, 10, 10, 1) - 0.5)
