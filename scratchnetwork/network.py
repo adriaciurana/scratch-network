@@ -113,6 +113,7 @@ class Network(object):
 		self.testIsAcyclicGraph()
 		# Habilitamos los tests en tiempo de ejecuccion
 		self.firstForward = True
+		self.predict_flag = False
 
 		# Calculamos los tamaños, realmente aplicamos un "forward"
 		# Las unicas capas que no tienen size de entrada son los inputs
@@ -184,6 +185,7 @@ class Network(object):
 		# definimos el tipo tamano del batch
 		self.batch_size = self.inputs[0].batchSize()
 		self.forward()
+		self.predict_flag = False
 		return dict([(n.name, n.temp_forward_result) for n in self.outputs])
 
 		

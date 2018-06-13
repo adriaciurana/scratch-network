@@ -7,8 +7,8 @@ from scratchnetwork import Network
 from scratchnetwork.layers import Input
 from scratchnetwork.layers import FC
 from scratchnetwork.layers import ReLU
-from scratchnetwork.losses import Loss
-from scratchnetwork.metrics import Metric
+from scratchnetwork.losses import MSE
+from scratchnetwork.metrics import MRSE
 net = Network()
 inputX = net.Node("Input", Input, [10])
 inputY = net.Node("Y", Input, [1])
@@ -17,8 +17,8 @@ B = net.Node("B", FC, 10)
 Br = net.Node("B_relu", ReLU)
 C = net.Node("Output", FC, 1)
 
-L1 = net.Node("Loss", Loss)
-M1 = net.Node("Metric", Metric)
+L1 = net.Node("MSE", MSE)
+M1 = net.Node("MRSE", MRSE)
 
 inputX.addNext(B)
 B.addNext(Br)
