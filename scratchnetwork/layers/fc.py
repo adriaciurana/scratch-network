@@ -22,17 +22,17 @@ class FC(Layer):
 	def forward(self, inputs):
 		super(FC, self).forward(inputs)
 		
-		input = np.reshape(np.concatenate([i.flatten() for i in inputs], axis=-1), [-1, sum(self.in_size_flatten)])
+		input = np.concatenate([i.flatten() for i in inputs], axis=-1).reshape([-1, sum(self.in_size_flatten)])
 		self.values.input = input
-		out = np.dot(input, self.weights.weights) + self.weights.bias
-		return np.reshape(out, [-1] + list(self.out_size))
+		out = input.dot(self.weights.weights) + self.weights.bias
+		return out.reshape([-1] + list(self.out_size))
 
 	def derivatives(self, doutput):
 		# BACKWARD
 		# como la capa envia distintas derivadas a cada entrada, esta debe separar los pesos
 		# Calculamos la backward con todos los pesos: (batch)x(neurons) [X] (neurons)x(I1 + I2 + ... In) = (batch)x(I1 + I2 + ... In)
-		partial = np.transpose(self.weights.weights)
-		global_backward = np.dot(doutput, partial)
+		partial = self.weights.weights.T
+		global_backward = doutput.dot(partial)
 		# las ponemos en formato flatten
 		# se separa en cada input
 		# [(batch)x(I1), (batch)xI2, ..., (batch)x(In)]
@@ -40,8 +40,8 @@ class FC(Layer):
 
 		# WEIGHTS
 		# para corregir los pesos estos se derivan con respecto los pesos
-		partial_respect_w = np.transpose(self.values.input)
+		partial_respect_w = self.values.input.T
 		# el resultado es una matriz de (input_size)x(output_size)
-		w = np.dot(partial_respect_w, doutput)
+		w = partial_respect_w.dot(doutput)
 
 		return backwards, (w, np.sum(doutput, axis=0))

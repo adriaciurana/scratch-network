@@ -42,7 +42,11 @@ class Conv2D(Layer):
 	def forward(self, inputs):
 		super(Conv2D, self).forward(inputs)
 
-		self.values.input = np.pad(inputs[0], [(0, 0), (self.padding_size[0], self.padding_size[0]), (self.padding_size[1], self.padding_size[1]), (0, 0)], mode='constant')
+		self.values.input = np.pad(inputs[0], [(0, 0), 
+											   (self.padding_size[0], self.padding_size[0]), 
+											   (self.padding_size[1], self.padding_size[1]), 
+											   (0, 0)], 
+											   mode='constant')
 		out = np.zeros(shape=[self.values.input.shape[0]] + list(self.out_size))
 		for i in range(self.out_size[0]):
 			for j in range(self.out_size[1]):

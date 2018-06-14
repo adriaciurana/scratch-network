@@ -13,7 +13,7 @@ class Softmax(Layer):
 		super(Softmax, self).forward(inputs)
 		input = np.exp(inputs[0])
 		self.values.input = input
-		self.values.sum = np.sum(np.reshape(input, [-1] + list(self.in_size_flatten[0])), axis=-1)
+		self.values.sum = np.sum(input.reshape([-1] + list(self.in_size_flatten[0])), axis=-1)
 		input /= self.values.sum
 		return input
 

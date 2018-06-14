@@ -129,3 +129,7 @@ class Layer(object):
 	@property
 	def predict_flag(self):
 		return self.node.network.predict_flag
+
+	@property
+	def batch_size(self):
+		return self.node.network.batch_size
