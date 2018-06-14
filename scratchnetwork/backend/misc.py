@@ -62,6 +62,18 @@ class Misc:
 		cols_reshaped = cols.reshape(C * kernel_size[0] * kernel_size[1], -1, N)
 		
 		cols_reshaped = cols_reshaped.transpose(2, 0, 1)
-		return
 		np.add.at(x_padded, (slice(None), i, j, k), cols_reshaped)
 		return x_padded[:, padding[0]:(H - padding[0]), padding[1]:(W - padding[1]), :]
+
+	"""
+	@staticmethod
+	def im2col2(img, kernel_size=(3,3), stride=(1,1)):
+		#https://stackoverflow.com/questions/50292750/python-the-implementation-of-im2col-which-takes-the-advantages-of-6-dimensional
+		N, H, W, C = img.shape
+		NN, HH, WW, CC = img.strides
+		out_h = (H - kernel_size[0])//stride[0] + 1
+		out_w = (W - kernel_size[1])//stride[0] + 1
+		col = np.lib.stride_tricks.as_strided(img, (N, out_h, out_w, C, kernel_size[0], kernel_size[1]), (NN, stride[0] * HH, stride[1] * WW, CC, HH, WW)).astype(float)
+		return col.reshape(np.multiply.reduceat(col.shape, (0, 3)))
+
+	"""

@@ -44,4 +44,4 @@ class FC(Layer):
 		# el resultado es una matriz de (input_size)x(output_size)
 		w = np.dot(partial_respect_w, doutput)
 
-		return backwards, (w, np.mean(doutput, axis=0))
+		return backwards, (w, np.sum(doutput, axis=0))

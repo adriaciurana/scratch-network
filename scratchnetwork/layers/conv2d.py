@@ -19,7 +19,7 @@ class Conv2D(Layer):
 		elif self.padding == 'same':
 			self.padding_size = (self.kernel_size[0] // 2, self.kernel_size[1] // 2)
 
-		super(Conv2D, self).__init__(node, tuple(['kernels']), lambda x: \
+		super(Conv2D, self).__init__(node, ('kernels', 'bias'), lambda x: \
 			np.transpose(np.reshape(x, [-1] + list(self.kernel_size) + [self.num_filters]), [0, 3, 1, 2])) #np.reshape(x, [-1, self.num_filters] + list(self.kernel_size)))
 	
 	def computeSize(self):
@@ -36,7 +36,8 @@ class Conv2D(Layer):
 			self.num_dim = 1
 		else:
 			self.num_dim = self.in_size[0][2]
-		self.weights.kernels = self.initializer.get(shape=(self.kernel_size[0]*self.kernel_size[1]*self.num_dim, self.num_filters)) #np.random.rand(self.kernel_size[0]*self.kernel_size[1]*self.num_dim, self.num_filters)
+		self.weights.kernels = self.initializer.get(shape=(self.kernel_size[0] * self.kernel_size[1] * self.num_dim, self.num_filters))
+		self.weights.bias = self.initializer.get(shape=(1, self.num_filters))
 
 	def forward(self, inputs):
 		super(Conv2D, self).forward(inputs)
@@ -48,13 +49,13 @@ class Conv2D(Layer):
 				iin = i*self.stride[0]
 				jin = j*self.stride[1]
 				
-				out[:, i, j] = np.dot( \
-					np.reshape(self.values.input[:, iin:(iin + self.kernel_size[0]), jin:(jin + self.kernel_size[1]), :], [-1] + [self.weights.kernels.shape[0]]), \
-					self.weights.kernels)
+				blockInput = self.values.input[:, iin:(iin + self.kernel_size[0]), jin:(jin + self.kernel_size[1]), :].reshape([-1] + [self.weights.kernels.shape[0]])
+				out[:, i, j] = blockInput.dot(self.weights.kernels) + self.weights.bias
 		return out
 
 	def derivatives(self, doutput):
-		dw = np.zeros(shape=(self.kernel_size[0]*self.kernel_size[1]*self.num_dim, self.num_filters))
+		dw = np.zeros(shape=self.weights.kernels.shape)
+		db = np.zeros(shape=self.weights.bias.shape, dtype=doutput.dtype)
 		dx = np.zeros(shape=[self.values.input.shape[0]] + list([self.in_size[0][0] + self.padding_size[0]*2, self.in_size[0][1] + self.padding_size[1]*2, self.in_size[0][2]]))
 		for i in range(self.out_size[0]):
 			for j in range(self.out_size[1]):
@@ -67,24 +68,16 @@ class Conv2D(Layer):
 				blockInput = self.values.input[:, iin:(iin + self.kernel_size[0]), jin:(jin + self.kernel_size[1]), :].reshape([-1] + [self.weights.kernels.shape[0]]).T
 				doutput_raw = doutput[:, i, j, :].reshape([-1, self.num_filters])
 				dw += blockInput.dot(doutput_raw)
-				"""dw += np.dot( \
-					np.transpose(np.reshape(self.values.input[:, iin:(iin + self.kernel_size[0]), jin:(jin + self.kernel_size[1]), :], [-1] + [self.weights.kernels.shape[0]])), \
-					np.reshape(doutput[:, i, j, :], [-1, self.num_filters]))"""
+				db += np.sum(doutput_raw, axis=0)
 
 				# backward
 				# [1, 1x1xOD] x [OD, WxHxID]
 				# [1, WxHxID]
-				# [B, W/2, H/2, OD] x [OD, WxHxID]
 				dx_p = doutput_raw.dot(self.weights.kernels.T).reshape([-1] + list(self.kernel_size) + [self.num_dim])
 				dx[:, iin:(iin + self.kernel_size[0]), jin:(jin + self.kernel_size[1]), :] += dx_p
-				"""
-				dx[:, iin:(iin + self.kernel_size[0]), jin:(jin + self.kernel_size[1]), :] += np.reshape( \
-					np.dot( \
-						np.reshape(doutput[:, i, j, :], [-1, self.num_filters]),  \
-						np.transpose(self.weights.kernels)), \
-					[-1] + list(self.kernel_size) + [self.num_dim])
-				"""
-		return dx[self.padding_size[0]:-self.padding_size[0], self.padding_size[1]:-self.padding_size[1]], dw
+		
+		# devolvemos resultados
+		return dx[self.padding_size[0]:-self.padding_size[0], self.padding_size[1]:-self.padding_size[1]], (dw, db)
 
 
 	# version numpy no es mas rapida

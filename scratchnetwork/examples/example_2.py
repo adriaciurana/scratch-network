@@ -51,7 +51,7 @@ for f in [w1, w2, w3]:
 	ff = np.flipud(np.fliplr(f))
 	for i in range(b.shape[0]):
 		for d in range(a.shape[-1]):
-			b[i,:,:,d] = signal.convolve2d(a[i,:,:,d], ff, 'valid')
+			b[i,:,:,d] = 2 + signal.convolve2d(a[i,:,:,d], ff, 'valid')
 
 	for i in range(1000):
 		Xaux = a[batch_index:(batch_index + batch_size)]
