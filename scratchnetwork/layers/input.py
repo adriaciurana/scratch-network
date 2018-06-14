@@ -19,7 +19,7 @@ class Input(Layer):
 			self.old_shape = self.data.shape
 		self.data = data
 		self.has_data = True
-		self.batch_size = self.data.shape[0]
+		self.batch_size_input = self.data.shape[0]
 
 		# Se deben volver a inicializar los tests de tamaño
 		if self.data.shape != self.old_shape:
@@ -37,5 +37,6 @@ class Input(Layer):
 	def forward(self, inputs):
 		return self.data
 
-	def batchSize(self):
-		return self.batch_size
+	@property
+	def batch_size(self):
+		return self.batch_size_input
