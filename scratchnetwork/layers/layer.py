@@ -121,3 +121,11 @@ class Layer(object):
 		copy_layer_instance.weights = self.weights.copy()
 		copy_layer_instance.values = self.values.copy()
 		return copy_layer_instance
+
+	"""
+		Properties
+	"""
+	
+	@property
+	def predict_flag(self):
+		return self.node.network.predict_flag
