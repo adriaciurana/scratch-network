@@ -6,8 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
-cython/resources/*.c
-cython/resources/*.html
+**/cython/resources/*.c
+**/cython/resources/*.html
 
 # Distribution / packaging
 .Python
