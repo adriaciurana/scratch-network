@@ -97,7 +97,8 @@ class Conv2D(Layer):
 					dx[:, iin:(iin + self.kernel_size[0]), jin:(jin + self.kernel_size[1]), :] += dx_p
 		
 		# devolvemos resultados
-		return dx[self.padding_size[0]:-self.padding_size[0], self.padding_size[1]:-self.padding_size[1]], (dw, db)
+		print('conv:', dx.shape)
+		return dx[:, self.padding_size[0]:(self.in_size[0][0] - self.padding_size[0]), self.padding_size[1]:(self.in_size[0][1] - self.padding_size[1]), :], (dw, db)
 
 
 	# version numpy no es mas rapida
