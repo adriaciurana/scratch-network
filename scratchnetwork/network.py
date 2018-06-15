@@ -23,6 +23,8 @@ class Network(object):
 		# optimizador
 		self.optimizer = None
 
+		self.cython = True
+
 	def start(self, inputs, outputs):
 		# Entradas y salidas de la red
 		self.inputs = inputs
@@ -213,3 +215,10 @@ class Network(object):
 
 	def get_weights(self, name):
 		return self.nodes[name].weights
+
+
+	"""
+		CYTHON
+	"""
+	def cython(self):
+		self.cython = True
