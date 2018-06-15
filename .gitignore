@@ -6,7 +6,6 @@ __pycache__/
 # C extensions
 *.so
 
-examples/**/*.png
 **/cython/resources/*.c
 **/cython/resources/*.html
 
