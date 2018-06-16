@@ -11,12 +11,18 @@ class Softmax(Layer):
 
 	def forward(self, inputs):
 		super(Softmax, self).forward(inputs)
-		input = np.exp(inputs[0])
-		self.values.input = input
-		self.values.sum = np.sum(input.reshape([-1] + list(self.in_size_flatten[0])), axis=-1)
-		input /= self.values.sum
-		return input
 
+		z = inputs[0]
+		assert len(z.shape) == 2
+		s = np.max(z, axis=1)
+		s = s[:, np.newaxis] # necessary step to do broadcasting
+		e_x = np.exp(z - s)
+		div = np.sum(e_x, axis=1)
+		div = div[:, np.newaxis] # dito
+		self.values.input = e_x
+		self.values.sum = div
+		return e_x / div
+		
 	def derivatives(self, doutput):
 		partial = self.values.input*(self.values.sum - self.values.input)/(self.values.input**2)
 		return doutput*partial

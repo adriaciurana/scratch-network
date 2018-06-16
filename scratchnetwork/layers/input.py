@@ -34,7 +34,8 @@ class Input(Layer):
 		if self.data is None:
 			raise Exceptions.InputNotFillException("La capa Input: " + self.node.name + " no ha sido llenada.")
 
-	def forward(self, inputs):
+	def forward(self, inputs):	
+		super(Input, self).forward(inputs)
 		return self.data
 
 	@property

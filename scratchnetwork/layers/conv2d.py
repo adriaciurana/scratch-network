@@ -4,7 +4,7 @@ import numpy as np
 from .cython import conv2d
 
 class Conv2D(Layer):
-	def __init__(self, node, num_filters, kernel_size=(3,3), stride=1, padding='valid', initializer=Initializer("normal"), params={}):
+	def __init__(self, node, num_filters, kernel_size=(3,3), stride=1, padding='valid', initializer={'weights': Initializer("normal"), 'bias': Initializer("normal")}, params={}):
 		self.initializer = initializer
 		self.num_filters = num_filters
 		self.kernel_size = kernel_size
@@ -33,12 +33,12 @@ class Conv2D(Layer):
 	def compile(self):
 		super(Conv2D, self).compile()
 		
-		if len(self.in_size[0]) < 2:
+		if len(self.in_size[0]) <= 2:
 			self.num_dim = 1
 		else:
 			self.num_dim = self.in_size[0][2]
-		self.weights.kernels = self.initializer.get(shape=(self.num_dim, self.kernel_size[0], self.kernel_size[1], self.num_filters))
-		self.weights.bias = self.initializer.get(shape=[self.num_filters])
+		self.weights.kernels = self.initializer['weights'].get(shape=(self.num_dim, self.kernel_size[0], self.kernel_size[1], self.num_filters))/(self.kernel_size[0] * self.kernel_size[1] * self.num_filters)
+		self.weights.bias = self.initializer['bias'].get(shape=[self.num_filters])
 
 	def forward(self, inputs):
 		super(Conv2D, self).forward(inputs)

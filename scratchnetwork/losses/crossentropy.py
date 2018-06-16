@@ -6,6 +6,7 @@ class CrossEntropy(Loss):
 		
 	def forward(self, inputs):
 		super(CrossEntropy, self).forward(inputs)
+		#print(inputs[0])
 		pred, true = inputs
 		self.values.pred = pred
 		self.values.true = true

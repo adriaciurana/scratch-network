@@ -1,9 +1,11 @@
 import numpy as np
 from .layers.layer import Layer
 from .backend.exceptions import Exceptions
+
+import time
 class Node(object):
 	INPUT, OUTPUT, MIDDLE, NOT_CONNECTED = range(4)
-	def __init__(self, network, name, layer, layer_args):
+	def __init__(self, network, name, layer, layer_args, layer_kargs):
 		self.temp_forward_dependences = 0
 		self.temp_backward_dependences = 0
 		
@@ -18,7 +20,7 @@ class Node(object):
 		
 		if issubclass(layer, Layer):
 			layer_args = tuple([self] + list(layer_args))
-			self.layer = layer(*layer_args)
+			self.layer = layer(*layer_args, **layer_kargs)
 		else:
 			raise Exceptions.NotFoundLayer("La capa que has introducido no existe.")
 
@@ -116,7 +118,12 @@ class Node(object):
 		# La diferencia entre un capa normal y una loss es que la loss debe añadirse al final de todo el proceso de la red
 		# Eso es debido a que tiene una naturala distinta al contener los datos en un funcional.
 		has_any_backward_to_compute = self.number_backward_any_prevs_nodes # any([n.compute_backward for n in self.prevs])
+
+		#global t
+		#t = time.time()
 		backward = self.computeBackwardAndCorrect(has_any_backward_to_compute)
+		#print(self.name, time.time() - t)
+
 		# si no tiene backward o no tiene nodos a los que enviar nada, el proceso se termina
 		if not has_any_backward_to_compute or backward is None:
 			return

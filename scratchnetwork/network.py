@@ -34,8 +34,8 @@ class Network(object):
 		
 		self.outputs = outputs
 
-	def Node(self, name, layer, *layer_args):
-		node = Node(self, name, layer, layer_args)
+	def Node(self, name, layer, *layer_args, **layer_kargs):
+		node = Node(self, name, layer, layer_args, layer_kargs)
 		self.nodes[name] = node
 		
 		return node

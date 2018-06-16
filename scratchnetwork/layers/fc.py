@@ -1,6 +1,7 @@
 from .layer import Layer
 from ..backend.initializer import Initializer
 import numpy as np
+from .cython import fc
 class FC(Layer):
 	def __init__(self, node, neurons, initializer={'weights': Initializer("normal"), 'bias': Initializer("normal")}, params={}):
 		super(FC, self).__init__(node, weights_names=('weights', 'bias'))
@@ -16,18 +17,24 @@ class FC(Layer):
 	def compile(self):
 		super(FC, self).compile()
 		
-		self.weights.weights = self.initializer['weights'].get(shape=(sum(self.in_size_flatten), self.neurons)) #np.random.rand(sum(self.in_size_flatten), self.neurons)
-		self.weights.bias = self.initializer['bias'].get(shape=(1, self.neurons)) #np.random.rand(1, self.neurons)
+		self.weights.weights = self.initializer['weights'].get(shape=(sum(self.in_size_flatten), self.neurons))/sum(self.in_size_flatten) #np.random.rand(sum(self.in_size_flatten), self.neurons)
+		self.weights.bias = self.initializer['bias'].get(shape=[self.neurons]) #np.random.rand(1, self.neurons)
 
 	def forward(self, inputs):
 		super(FC, self).forward(inputs)
 		
+		"""
 		input = np.concatenate([i.flatten() for i in inputs], axis=-1).reshape([-1, sum(self.in_size_flatten)])
 		self.values.input = input
 		out = input.dot(self.weights.weights) + self.weights.bias
 		return out.reshape([-1] + list(self.out_size))
+		"""
+		self.values.input = inputs[0]
+		out = fc.nb_forward(self.values.input, self.weights.weights, self.weights.bias)
+		return out
 
 	def derivatives(self, doutput):
+		"""
 		# BACKWARD
 		# como la capa envia distintas derivadas a cada entrada, esta debe separar los pesos
 		# Calculamos la backward con todos los pesos: (batch)x(neurons) [X] (neurons)x(I1 + I2 + ... In) = (batch)x(I1 + I2 + ... In)
@@ -44,4 +51,6 @@ class FC(Layer):
 		# el resultado es una matriz de (input_size)x(output_size)
 		w = partial_respect_w.dot(doutput)
 
-		return backwards, (w, np.sum(doutput, axis=0))
+		return backwards, (w, np.sum(doutput, axis=0))"""
+		dx, dw, db = fc.nb_derivatives(doutput, self.values.input, self.weights.weights)
+		return dx, (dw, db)

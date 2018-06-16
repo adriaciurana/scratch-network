@@ -1,4 +1,8 @@
+import numpy as np
 from ..backend.exceptions import Exceptions
+
+#import time
+#t = time.time()
 class Layer(object):
 	def __init__(self, node, weights_names=None, func_repr_weights=lambda x: x, params={}):
 		self.node = node
@@ -47,6 +51,13 @@ class Layer(object):
 		pass
 
 	def forward(self, inputs):
+		"""global t
+		t1 = time.time()
+		print(self.node.name, t1 - t)
+		t = t1"""
+		"""print(self.node.name)
+		print(np.max(inputs[0]), np.min(inputs[0]))
+		print('----------------')"""
 		pass
 	
 	def derivatives(self, doutput=None):
@@ -104,12 +115,15 @@ class Layer(object):
 		setattr(self.weights, name, w + self.node.network.optimizer.step(dweight))
 
 	def correctWeights(self, dweights):
+		#import time
+		#a0 = time.time()
 		if isinstance(dweights, (list, tuple)):
 			for i, dw in enumerate(dweights):
 				# aplicamos las correciones a los pesos
 				self.correctWeight(self.weights_names[i], dw)
 		else:
 			self.correctWeight(self.weights_names[0], dweights)
+		#print(time.time() - a0)
 
 	"""
 		COPY
