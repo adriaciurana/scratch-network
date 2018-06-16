@@ -45,7 +45,7 @@ b = 5*net.predict({'Input': a})['Output']
 batch_size = 20
 batch_index = 0
 
-net.compile(losses=[L1], metrics=[M1], optimizer=SGD(lr=1, clip=1))
+net.compile(losses=[L1], metrics=[M1], optimizer=SGD(lr=0.1, clip=1))
 net.start(inputs=[inputX], outputs=[N3])
 
 for i in range(100000):

@@ -43,14 +43,8 @@ class Conv2D(Layer):
 	def forward(self, inputs):
 		super(Conv2D, self).forward(inputs)
 
-		self.values.input = np.pad(inputs[0], [(0, 0), 
-											   (self.padding_size[0], self.padding_size[0]), 
-											   (self.padding_size[1], self.padding_size[1]), 
-											   (0, 0)], 
-											   mode='constant')
-		out = np.zeros(shape=[self.values.input.shape[0]] + list(self.out_size))
-		conv2d.nb_forward(self.values.input, self.weights.kernels, self.weights.bias, out, 
-				self.out_size, self.kernel_size, self.stride)
+		self.values.input = np.pad(inputs[0], [(0, 0), (self.padding_size[0], self.padding_size[0]), (self.padding_size[1], self.padding_size[1]), (0, 0)], mode='constant')
+		out = conv2d.nb_forward(self.values.input, self.weights.kernels, self.weights.bias, self.stride)
 		"""
 		for i in range(self.out_size[0]):
 			for j in range(self.out_size[1]):
@@ -64,12 +58,7 @@ class Conv2D(Layer):
 
 
 	def derivatives(self, doutput):
-		dw = np.zeros(shape=self.weights.kernels.shape)
-		db = np.zeros(shape=self.weights.bias.shape, dtype=doutput.dtype)
-		dx = np.zeros(shape=[self.values.input.shape[0]] + list([self.in_size[0][0] + self.padding_size[0]*2, self.in_size[0][1] + self.padding_size[1]*2, self.in_size[0][2]]))
-		conv2d.nb_derivatives(self.values.input, doutput, self.weights.kernels,
-				dw, db, dx,
-				self.out_size, self.kernel_size, self.stride)
+		dx, dw, db = conv2d.nb_derivatives(doutput, self.values.input, self.weights.kernels, self.stride)
 		"""
 		for i in range(self.out_size[0]):
 			for j in range(self.out_size[1]):

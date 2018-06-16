@@ -39,14 +39,10 @@ class Pooling2D(Layer):
 		super(Pooling2D, self).forward(inputs)
 
 		input = np.pad(inputs[0], [(0, 0), (self.padding_size[0], self.padding_size[0]), (self.padding_size[1], self.padding_size[1]), (0, 0)], mode='constant')
-		self.values.mask = np.zeros(shape=[input.shape[0]] + list(self.out_size) + [2], dtype=np.int16)
-		out = np.zeros(shape=[input.shape[0]] + list(self.out_size))
 		if self.type_pooling == 'max':
-			pooling2d.nb_forward_max(input, self.values.mask, out, 
-				self.out_size, self.pool_size, self.stride)
+			out, self.values.mask = pooling2d.nb_forward_max(input, self.pool_size, self.stride)
 		elif self.type_pooling == 'mean':
-			pooling2d.nb_forward_mean(input, out, 
-				self.out_size, self.pool_size, self.stride)
+			out = pooling2d.nb_forward_mean(input, self.pool_size, self.stride)
 
 
 		"""Bind, Dind = np.meshgrid(range(out.shape[0]), range(out.shape[-1]))
@@ -66,15 +62,10 @@ class Pooling2D(Layer):
 		return out
 
 	def derivatives(self, doutput):
-		dx = np.zeros(shape=[doutput.shape[0]] + list([self.in_size[0][0] + 2*self.padding_size[0], self.in_size[0][1] + 2*self.padding_size[1], self.in_size[0][2]]))
 		if self.type_pooling == 'max':
-			pooling2d.nb_derivatives_max(self.values.mask, doutput,
-				dx,
-				self.out_size, self.stride)
+			dx = pooling2d.nb_derivatives_max(doutput, self.in_size[0], self.values.mask, self.stride)
 		elif self.type_pooling == 'mean':
-			pooling2d.nb_derivatives_mean(doutput,
-				dx,
-				self.out_size, self.pool_size, self.stride)
+			dx = pooling2d.nb_derivatives_mean(doutput, self.in_size[0], self.pool_size, self.stride)
 
 
 		"""

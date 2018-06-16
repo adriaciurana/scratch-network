@@ -7,6 +7,7 @@ import glob
 import os
 import Cython.Compiler.Options
 Cython.Compiler.Options.annotate = True
+import numpy
 
 ext_modules=[]
 for ext in glob.glob("*/cython/resources/*.pyx"):
@@ -23,4 +24,6 @@ setup(
 	name = 'cython_resources',
 	cmdclass = {'build_ext': build_ext},
 	ext_modules = ext_modules,
+	include_dirs=[numpy.get_include()],
+	extra_compile_args=['-o3', '-Wno-#warnings']
 )
