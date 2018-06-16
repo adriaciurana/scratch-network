@@ -1,12 +1,12 @@
 # forward
-def nb_forward(double[:, :, :, :] input, double[:, :, :, :] kernels, double[:] bias, double[:, :, :, :] out, 
+def nb_forward(double[:, :, :, :] inputv, double[:, :, :, :] kernels, double[:] bias, double[:, :, :, :] out, 
 					  tuple out_size, tuple kernel_size, tuple stride):
 	cdef int out_size0 = out_size[0], \
 	out_size1 = out_size[1], \
 	kernel_size0 = kernel_size[0], kernel_size1 = kernel_size[1], \
 	stride0 = stride[0], stride1 = stride[1], \
 	num_dim = kernels.shape[0], num_filters = kernels.shape[3], \
-	batch_size = input.shape[0]
+	batch_size = inputv.shape[0]
 
 	cdef int b, i, j, m, kw, kh, n
 	cdef int iin, jin
@@ -23,12 +23,12 @@ def nb_forward(double[:, :, :, :] input, double[:, :, :, :] kernels, double[:] b
 					for m in range(num_dim):	
 						for kw in range(kernel_size0):
 							for kh in range(kernel_size1):
-								acc += input[b, iin + kw, jin + kh, m] * kernels[m, kw, kh, n]
+								acc += inputv[b, iin + kw, jin + kh, m] * kernels[m, kw, kh, n]
 					out[b, i, j, n] = acc + bias[n]
 
 
 # derivatives
-def nb_derivatives(double[:, :, :, :] input, double[:, :, :, :] doutput, double[:, :, :, :] kernels,
+def nb_derivatives(double[:, :, :, :] inputv, double[:, :, :, :] doutput, double[:, :, :, :] kernels,
 				   double[:, :, :, :] dw, double [:] db, double [:, :, :, :] dx,
 				   tuple out_size, tuple kernel_size, tuple stride):
 	cdef int out_size0 = out_size[0], \
@@ -36,7 +36,7 @@ def nb_derivatives(double[:, :, :, :] input, double[:, :, :, :] doutput, double[
 	kernel_size0 = kernel_size[0], kernel_size1 = kernel_size[1], \
 	stride0 = stride[0], stride1 = stride[1], \
 	num_dim = kernels.shape[0], num_filters = kernels.shape[3], \
-	batch_size = input.shape[0]
+	batch_size = inputv.shape[0]
 
 	cdef int b, i, j, m, kw, kh, n
 	cdef int iin, jin
@@ -59,5 +59,5 @@ def nb_derivatives(double[:, :, :, :] input, double[:, :, :, :] doutput, double[
 							jin_kh = (jin + kh)
 
 							for m in range(num_dim):
-								dw[m, kw, kh, n] += input[b, iin_kw, jin_kh, m]*doutput_ptr
+								dw[m, kw, kh, n] += inputv[b, iin_kw, jin_kh, m]*doutput_ptr
 								dx[b, iin_kw, jin_kh, m] += kernels[m, kw, kh, n]*doutput_ptr
