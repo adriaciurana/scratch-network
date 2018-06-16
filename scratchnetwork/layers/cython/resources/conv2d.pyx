@@ -1,12 +1,16 @@
 # forward
-def nb_forward(double[:, :, :, :] input, double[:, :] kernels, double[:, :] bias, double[:, :, :, :] out, 
-					  tuple out_size, tuple kernel_size, tuple stride, 
-					  int batch_size, int num_dim, int num_filters):
-	cdef int out_size0 = out_size[0], out_size1 = out_size[1], kernel_size0 = kernel_size[0], kernel_size1 = kernel_size[1], stride0 = stride[0], stride1 = stride[1]
+def nb_forward(double[:, :, :, :] input, double[:, :, :, :] kernels, double[:] bias, double[:, :, :, :] out, 
+					  tuple out_size, tuple kernel_size, tuple stride):
+	cdef int out_size0 = out_size[0], \
+	out_size1 = out_size[1], \
+	kernel_size0 = kernel_size[0], kernel_size1 = kernel_size[1], \
+	stride0 = stride[0], stride1 = stride[1], \
+	num_dim = kernels.shape[0], num_filters = kernels.shape[3], \
+	batch_size = input.shape[0]
 
 	cdef int b, i, j, m, kw, kh, n
-	cdef int idx, iin, jin
-	cdef double acc, blockInput
+	cdef int iin, jin
+	cdef double acc
 
 	for b in range(batch_size):
 		for i in range(out_size0):
@@ -14,27 +18,28 @@ def nb_forward(double[:, :, :, :] input, double[:, :] kernels, double[:, :] bias
 				iin = i*stride0
 				jin = j*stride1
 
-				for m in range(num_filters):
+				for n in range(num_filters):
 					acc = 0.
-					for kw in range(kernel_size0):
-						for kh in range(kernel_size1):
-							blockInput = input[b, iin + kw, jin + kh, m]
-							for n in range(num_dim):
-								idx = kw*kernel_size1*num_dim + kh*num_dim + n #idx = np.ravel_multi_index([kw, kh, n], [num_dim, kernel_size[1], kernel_size[0]])
-								acc += blockInput * kernels[idx, m]
-					out[b, i, j, m] = acc + bias[0, m]
+					for m in range(num_dim):	
+						for kw in range(kernel_size0):
+							for kh in range(kernel_size1):
+								acc += input[b, iin + kw, jin + kh, m] * kernels[m, kw, kh, n]
+					out[b, i, j, n] = acc + bias[n]
 
 
 # derivatives
-def nb_derivatives(double[:, :, :, :] input, double[:, :, :, :] doutput, double[:, :] kernels, double[:, :] bias,
-				   double[:, :] dw, double [:, :] db, double [:, :, :, :] dx,
-				   tuple out_size, tuple kernel_size, tuple stride, 
-				   int batch_size, int num_dim, int num_filters):
-	cdef int out_size0 = out_size[0], out_size1 = out_size[1], kernel_size0 = kernel_size[0], kernel_size1 = kernel_size[1], stride0 = stride[0], stride1 = stride[1]
+def nb_derivatives(double[:, :, :, :] input, double[:, :, :, :] doutput, double[:, :, :, :] kernels,
+				   double[:, :, :, :] dw, double [:] db, double [:, :, :, :] dx,
+				   tuple out_size, tuple kernel_size, tuple stride):
+	cdef int out_size0 = out_size[0], \
+	out_size1 = out_size[1], \
+	kernel_size0 = kernel_size[0], kernel_size1 = kernel_size[1], \
+	stride0 = stride[0], stride1 = stride[1], \
+	num_dim = kernels.shape[0], num_filters = kernels.shape[3], \
+	batch_size = input.shape[0]
 
 	cdef int b, i, j, m, kw, kh, n
-	cdef int idx, iin, jin
-	cdef double acc, blockInput
+	cdef int iin, jin
 	cdef int iin_kw, jin_kh
 	cdef double doutput_ptr
 
@@ -44,18 +49,15 @@ def nb_derivatives(double[:, :, :, :] input, double[:, :, :, :] doutput, double[
 				iin = i*stride0
 				jin = j*stride1
 
-				for m in range(num_filters):
-					acc = 0.
+				for n in range(num_filters):
+					doutput_ptr = doutput[b, i, j, n]
+					db[n] += doutput_ptr
+
 					for kw in range(kernel_size0):
 						for kh in range(kernel_size1):
 							iin_kw = (iin + kw)
 							jin_kh = (jin + kh)
-							blockInput = input[b, iin_kw, jin_kh, m]
 
-							for n in range(num_dim):
-								idx = kw*kernel_size1*num_dim + kh*num_dim + n #idx = np.ravel_multi_index([kw, kh, n], [num_dim, kernel_size[1], kernel_size[0]])
-								doutput_ptr = doutput[b, i, j, n]
-
-								dw[idx, m] += blockInput*doutput_ptr
-								db[0, m] += doutput_ptr
-								dx[b, iin_kw, jin_kh, m] += kernels[idx, m]*doutput_ptr
+							for m in range(num_dim):
+								dw[m, kw, kh, n] += input[b, iin_kw, jin_kh, m]*doutput_ptr
+								dx[b, iin_kw, jin_kh, m] += kernels[m, kw, kh, n]*doutput_ptr

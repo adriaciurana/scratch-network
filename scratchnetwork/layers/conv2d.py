@@ -1,7 +1,8 @@
 from .layer import Layer
 from ..backend.initializer import Initializer
-from ..backend.misc import Misc
 import numpy as np
+from .cython import conv2d
+
 class Conv2D(Layer):
 	def __init__(self, node, num_filters, kernel_size=(3,3), stride=1, padding='valid', initializer=Initializer("normal"), params={}):
 		self.initializer = initializer
@@ -21,10 +22,6 @@ class Conv2D(Layer):
 
 		super(Conv2D, self).__init__(node, ('kernels', 'bias'), lambda x: \
 			np.transpose(np.reshape(x, [-1] + list(self.kernel_size) + [self.num_filters]), [0, 3, 1, 2])) #np.reshape(x, [-1, self.num_filters] + list(self.kernel_size)))
-	
-		if self.node.network.cython:
-			from .cython import conv2d
-			self.cython_mod = conv2d
 
 	def computeSize(self):
 		super(Conv2D, self).computeSize()
@@ -40,8 +37,8 @@ class Conv2D(Layer):
 			self.num_dim = 1
 		else:
 			self.num_dim = self.in_size[0][2]
-		self.weights.kernels = self.initializer.get(shape=(self.kernel_size[0] * self.kernel_size[1] * self.num_dim, self.num_filters))
-		self.weights.bias = self.initializer.get(shape=(1, self.num_filters))
+		self.weights.kernels = self.initializer.get(shape=(self.num_dim, self.kernel_size[0], self.kernel_size[1], self.num_filters))
+		self.weights.bias = self.initializer.get(shape=[self.num_filters])
 
 	def forward(self, inputs):
 		super(Conv2D, self).forward(inputs)
@@ -52,18 +49,17 @@ class Conv2D(Layer):
 											   (0, 0)], 
 											   mode='constant')
 		out = np.zeros(shape=[self.values.input.shape[0]] + list(self.out_size))
-		if self.node.network.cython:
-			self.cython_mod.nb_forward(self.values.input, self.weights.kernels, self.weights.bias, out, 
-				self.out_size, self.kernel_size, self.stride, 
-				self.values.input.shape[0], self.num_dim, self.num_filters)
-		else:
-			for i in range(self.out_size[0]):
-				for j in range(self.out_size[1]):
-					iin = i*self.stride[0]
-					jin = j*self.stride[1]
-					
-					blockInput = self.values.input[:, iin:(iin + self.kernel_size[0]), jin:(jin + self.kernel_size[1]), :].reshape([-1] + [self.weights.kernels.shape[0]])
-					out[:, i, j] = blockInput.dot(self.weights.kernels) + self.weights.bias
+		conv2d.nb_forward(self.values.input, self.weights.kernels, self.weights.bias, out, 
+				self.out_size, self.kernel_size, self.stride)
+		"""
+		for i in range(self.out_size[0]):
+			for j in range(self.out_size[1]):
+				iin = i*self.stride[0]
+				jin = j*self.stride[1]
+				
+				blockInput = self.values.input[:, iin:(iin + self.kernel_size[0]), jin:(jin + self.kernel_size[1]), :].reshape([-1] + [self.weights.kernels.shape[0]])
+				out[:, i, j] = blockInput.dot(self.weights.kernels) + self.weights.bias
+		"""
 		return out
 
 
@@ -71,33 +67,31 @@ class Conv2D(Layer):
 		dw = np.zeros(shape=self.weights.kernels.shape)
 		db = np.zeros(shape=self.weights.bias.shape, dtype=doutput.dtype)
 		dx = np.zeros(shape=[self.values.input.shape[0]] + list([self.in_size[0][0] + self.padding_size[0]*2, self.in_size[0][1] + self.padding_size[1]*2, self.in_size[0][2]]))
-		if self.node.network.cython:
-			self.cython_mod.nb_derivatives(self.values.input, doutput, self.weights.kernels, self.weights.bias,
+		conv2d.nb_derivatives(self.values.input, doutput, self.weights.kernels,
 				dw, db, dx,
-				self.out_size, self.kernel_size, self.stride, 
-				self.values.input.shape[0], self.num_dim, self.num_filters)
-		else:
-			for i in range(self.out_size[0]):
-				for j in range(self.out_size[1]):
-					iin = i*self.stride[0]
-					jin = j*self.stride[1]
-					
-					# weights
-					# [WxHxID, 1] x [1, 1x1xOD]
-					# producto cartesiano = [WxHxID, OD]
-					blockInput = self.values.input[:, iin:(iin + self.kernel_size[0]), jin:(jin + self.kernel_size[1]), :].reshape([-1] + [self.weights.kernels.shape[0]]).T
-					doutput_raw = doutput[:, i, j, :].reshape([-1, self.num_filters])
-					dw += blockInput.dot(doutput_raw)
-					db += np.sum(doutput_raw, axis=0)
+				self.out_size, self.kernel_size, self.stride)
+		"""
+		for i in range(self.out_size[0]):
+			for j in range(self.out_size[1]):
+				iin = i*self.stride[0]
+				jin = j*self.stride[1]
+				
+				# weights
+				# [WxHxID, 1] x [1, 1x1xOD]
+				# producto cartesiano = [WxHxID, OD]
+				blockInput = self.values.input[:, iin:(iin + self.kernel_size[0]), jin:(jin + self.kernel_size[1]), :].reshape([-1] + [self.weights.kernels.shape[0]]).T
+				doutput_raw = doutput[:, i, j, :].reshape([-1, self.num_filters])
+				dw += blockInput.dot(doutput_raw)
+				db += np.sum(doutput_raw, axis=0)
 
-					# backward
-					# [1, 1x1xOD] x [OD, WxHxID]
-					# [1, WxHxID]
-					dx_p = doutput_raw.dot(self.weights.kernels.T).reshape([-1] + list(self.kernel_size) + [self.num_dim])
-					dx[:, iin:(iin + self.kernel_size[0]), jin:(jin + self.kernel_size[1]), :] += dx_p
+				# backward
+				# [1, 1x1xOD] x [OD, WxHxID]
+				# [1, WxHxID]
+				dx_p = doutput_raw.dot(self.weights.kernels.T).reshape([-1] + list(self.kernel_size) + [self.num_dim])
+				dx[:, iin:(iin + self.kernel_size[0]), jin:(jin + self.kernel_size[1]), :] += dx_p
+		"""
 		
 		# devolvemos resultados
-		print('conv:', dx.shape)
 		return dx[:, self.padding_size[0]:(self.in_size[0][0] - self.padding_size[0]), self.padding_size[1]:(self.in_size[0][1] - self.padding_size[1]), :], (dw, db)
 
 

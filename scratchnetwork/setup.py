@@ -14,6 +14,7 @@ for ext in glob.glob("*/cython/resources/*.pyx"):
 	dirname = os.path.dirname(ext)
 	name, _ = filename.split(".")
 	name = os.path.dirname(dirname) + "/" + name
+	name = name.replace("/", ".")
 	print(name)
 	print(ext)
 	ext_modules.append(Extension(name, [ext]))

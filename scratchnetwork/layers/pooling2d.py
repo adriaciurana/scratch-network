@@ -1,6 +1,8 @@
 from .layer import Layer
 from ..backend.initializer import Initializer
 import numpy as np
+from .cython import pooling2d
+
 class Pooling2D(Layer):
 	def __init__(self, node, type_pooling='max', pool_size=(2,2), stride=1, padding='valid', params={}):
 		self.type_pooling = type_pooling
@@ -36,36 +38,44 @@ class Pooling2D(Layer):
 	def forward(self, inputs):
 		super(Pooling2D, self).forward(inputs)
 
-		self.values.input = np.pad(inputs[0], [(0, 0), (self.padding_size[0], self.padding_size[0]), (self.padding_size[1], self.padding_size[1]), (0, 0)], mode='constant')
-		out = np.zeros(shape=[self.values.input.shape[0]] + list(self.out_size))
-
+		input = np.pad(inputs[0], [(0, 0), (self.padding_size[0], self.padding_size[0]), (self.padding_size[1], self.padding_size[1]), (0, 0)], mode='constant')
+		self.values.mask = np.zeros(shape=[input.shape[0]] + list(self.out_size) + [2], dtype=np.int16)
 		# Lo realizamos sin poner el if dentro del bucle para optimizar un poco el codigo
 		if self.type_pooling == 'max':
-			if not self.predict_flag:
-				self.values.positions = np.zeros(shape=[self.values.input.shape[0]] + list(self.in_size[0]))
-			
+			out = np.zeros(shape=[input.shape[0]] + list(self.out_size))
+			pooling2d.nb_forward_max(input, self.values.mask, out, 
+				self.out_size, self.pool_size, self.stride, 
+				input.shape[0], self.num_dim)
+
+			"""Bind, Dind = np.meshgrid(range(out.shape[0]), range(out.shape[-1]))
+			Bind = Bind.flatten()
+			Dind = Dind.flatten()
 			for i in range(self.out_size[0]):
 				for j in range(self.out_size[1]):
 					iin = i*self.stride[0]
 					jin = j*self.stride[1]
 
-					blockInput = self.values.input[:, iin:(iin + self.pool_size[0]), jin:(jin + self.pool_size[1]), :]
-					blockInputFlatten = np.reshape(blockInput, [-1, blockInput.shape[1]*blockInput.shape[2], blockInput.shape[3]])
-					for m, pb in enumerate(np.argmax(blockInputFlatten, axis=1)):
-						for n, pf in enumerate(pb):
-							p = np.unravel_index(pf, blockInput.shape)
-							out[m, i, j, n] = blockInput[p]
-							if self.predict_flag:
-								p = (p[0], (p[1] + i)*self.stride[0], (p[2] + j)*self.stride[1], p[3])
-								self.values.positions[m, i, j, n] = 1 + np.ravel_multi_index(p, blockInput.shape)
-		return out
+					blockInput = input[:, iin:(iin + self.pool_size[0]), jin:(jin + self.pool_size[1]), :].transpose(0, 3, 1, 2).reshape([-1, np.prod(self.pool_size)])
+					maxIndex = np.argmax(blockInput, axis=-1)
+					mi, mj = np.unravel_index(maxIndex, self.pool_size)
+					self.values.mask[Bind, iin + mi, jin + mj, Dind] = [i + 1, j + 1]
+					out[:, i, j] = blockInput[range(maxIndex.size), maxIndex].reshape(out.shape[0], self.num_dim)
+			"""
+			return out
 
 	def derivatives(self, doutput):
-		def map_doutput(x):
-			if x == 0:
-				return 0
-			return doutput[x - 1]
-		func = np.vectorize(map_doutput)
-		
 		if self.type_pooling == 'max':
-			return func(self.values.positions)
+			dx = np.zeros(shape=[doutput.shape[0]] + list([self.in_size[0][0] + 2*self.padding_size[0], self.in_size[0][1] + 2*self.padding_size[1], self.in_size[0][2]]))
+			pooling2d.nb_derivatives_max(self.values.mask, doutput,
+				dx,
+				self.out_size, self.stride, 
+				doutput.shape[0], self.num_dim)
+
+			"""
+			n = np.tile(np.reshape(range(doutput.shape[0]), [-1, 1, 1, 1]), [1] + list(self.in_size[0]))
+			m = np.tile(np.reshape(range(self.num_dim), [1, 1, 1, -1]), [doutput.shape[0], self.in_size[0][1], self.in_size[0][2], 1])
+			doutput = np.pad(doutput, [(0, 0), (1, 0), (1, 0), (0, 0)], mode='constant')
+			dx = doutput[n, self.values.mask[:, :, :, :, 0], self.values.mask[:, :, :, :, 0], m]
+			return dx
+			"""
+			return dx[:, self.padding_size[0]:(self.in_size[0][0] - self.padding_size[0]), self.padding_size[1]:(self.in_size[0][1] - self.padding_size[1]), :]
