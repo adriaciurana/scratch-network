@@ -4,7 +4,7 @@ import numpy as np
 from .cython import conv2d
 
 class Conv2D(Layer):
-	def __init__(self, node, num_filters, kernel_size=(3,3), stride=1, padding='valid', initializer={'weights': Initializer("normal"), 'bias': Initializer("normal")}, params={}):
+	def __init__(self, node, num_filters, kernel_size=(3,3), stride=(1, 1), padding='valid', initializer={'weights': Initializer("normal"), 'bias': Initializer("normal")}, params={}):
 		self.initializer = initializer
 		self.num_filters = num_filters
 		self.kernel_size = kernel_size
@@ -21,7 +21,7 @@ class Conv2D(Layer):
 			self.padding_size = (self.kernel_size[0] // 2, self.kernel_size[1] // 2)
 
 		super(Conv2D, self).__init__(node, weights_names=('kernels', 'bias'), func_repr_weights=lambda x: \
-			np.transpose(np.reshape(x, [-1] + list(self.kernel_size) + [self.num_filters]), [0, 3, 1, 2]), params=params) #np.reshape(x, [-1, self.num_filters] + list(self.kernel_size)))
+			np.transpose(x, [0, 3, 1, 2]), params=params) #np.reshape(x, [-1, self.num_filters] + list(self.kernel_size)))
 
 	def computeSize(self):
 		super(Conv2D, self).computeSize()

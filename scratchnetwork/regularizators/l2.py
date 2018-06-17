@@ -5,4 +5,6 @@ class L2(Regularization):
 		super(L2, self).__init__(lambda_value)
 	
 	def function(self, data):
+		if self.lambda_value == 0:
+			return 0
 		return self.lambda_value * 2 * data

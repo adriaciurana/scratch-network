@@ -4,7 +4,7 @@ import numpy as np
 from .cython import pooling2d
 
 class Pooling2D(Layer):
-	def __init__(self, node, type_pooling='max', pool_size=(2,2), stride=1, padding='valid', params={}):
+	def __init__(self, node, type_pooling='max', pool_size=(2,2), stride=(1, 1), padding='valid', params={}):
 		self.type_pooling = type_pooling
 		self.pool_size = pool_size
 		if isinstance(stride, (list, tuple)):
