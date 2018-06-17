@@ -123,6 +123,8 @@ class Network(object):
 		# Compilamos las capas
 		for n in self.nodes.values():
 			n.compile()
+		for n in self.nodes.values(): # se dene ejecutar una vez compilados
+			n.computeNumberOfBackwardNodes()
 
 		# Calculamos los pesos de las losses
 		# si la entrada ha sido una lista los pesos de cada loss son equiprobables.

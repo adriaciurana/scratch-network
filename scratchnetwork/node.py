@@ -190,7 +190,6 @@ class Node(object):
 	# Compila la capa
 	def compile(self):
 		self.layer.compile()
-		self.computeNumberOfBackwardNodes()
 
 	# Determina que tipo de nodo es	
 	def determineNode(self):
