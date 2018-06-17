@@ -43,7 +43,7 @@ def nb_derivatives(np.ndarray[FLOAT64, ndim=2] doutput, np.ndarray[FLOAT64, ndim
 
 	cdef np.ndarray[FLOAT64, ndim=2] dx = np.zeros(shape=[batch_size, out_size0], dtype=np.float64)
 
-	cdef unsigned int b, i
+	cdef unsigned int b, i, j
 	cdef double acc, aux
 	for b in range(batch_size):
 		for i in range(out_size0):

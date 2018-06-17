@@ -8,5 +8,6 @@ class Metric(Loss):
 
 
 	def forward(self, inputs):
-		super(Loss, self).forward(inputs)
+		super(Metric, self).forward(inputs)
+
 		

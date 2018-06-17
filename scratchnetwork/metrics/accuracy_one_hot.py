@@ -7,6 +7,7 @@ class Accuracy(Metric):
 
 	def forward(self, inputs):
 		super(Accuracy, self).forward(inputs)
+
 		pred, true = inputs
 		pred = np.argmax(pred, axis=-1)
 		true = np.argmax(true, axis=-1)
