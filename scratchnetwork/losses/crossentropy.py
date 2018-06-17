@@ -10,8 +10,8 @@ class CrossEntropy(Loss):
 		pred, true = inputs
 		self.values.pred = pred
 		self.values.true = true
-		out = - true*np.log(pred)
+		out = - true*np.log(pred) - (1 - true)*np.log(1 - pred)
 		return np.mean(np.sum(out, axis=-1), axis=0)
 
 	def derivatives(self, doutput=None):
-		return - self.values.true/self.values.pred
+		return - (self.values.true/self.values.pred) - ((1 - self.values.true)/(1 - self.values.pred))

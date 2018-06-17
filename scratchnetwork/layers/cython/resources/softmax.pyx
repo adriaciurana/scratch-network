@@ -39,8 +39,8 @@ def nb_derivatives(np.ndarray[FLOAT64, ndim=2] doutput, np.ndarray[FLOAT64, ndim
 
 	cdef np.ndarray[FLOAT64, ndim=2] dx = np.zeros(shape=[batch_size, out_size0], dtype=np.float64)
 
-	cdef unsigned int b, i
-	cdef double acc, aux
+	"""cdef unsigned int b, i
+	def double acc, aux
 	for b in range(batch_size):
 		for i in range(out_size0):
 			acc = 0.
@@ -52,4 +52,14 @@ def nb_derivatives(np.ndarray[FLOAT64, ndim=2] doutput, np.ndarray[FLOAT64, ndim
 					acc += - aux*ovalue[b, j]
 
 			dx[b, i] = doutput[b, i]*acc
+	"""
+	cdef unsigned int b, i
+	cdef double acc
+	for b in range(batch_size):
+		acc = 0.
+		for i in range(out_size0):
+				acc += ovalue[b, i]
+
+		for i in range(out_size0):
+			dx[b, i] = doutput[b, i]*ovalue[b, i]*(acc - ovalue[b, i])/(acc*acc)
 	return dx
