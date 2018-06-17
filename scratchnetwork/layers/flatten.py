@@ -3,7 +3,7 @@ import numpy as np
 class Flatten(Layer):
 	def __init__(self, node, params={}):
 		params['number_of_inputs'] = 1
-		super(Flatten, self).__init__(node, params)
+		super(Flatten, self).__init__(node, params=params)
 	
 	def computeSize(self):
 		super(Flatten, self).computeSize()

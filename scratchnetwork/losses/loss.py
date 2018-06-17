@@ -4,7 +4,7 @@ class Loss(Layer):
 	def __init__(self, node, params= {}):
 		params['same_input_shape'] = True
 		params['compute_forward_in_prediction'] = False
-		super(Loss, self).__init__(node, params)
+		super(Loss, self).__init__(node, params=params)
 
 	def computeSize(self):
 		return tuple([1])

@@ -18,7 +18,7 @@ class Pooling2D(Layer):
 
 		elif self.padding == 'same':
 			self.padding_size = (self.pool_size[0] // 2, self.pool_size[1] // 2)
-		super(Pooling2D, self).__init__(node)
+		super(Pooling2D, self).__init__(node, params=params)
 
 	def computeSize(self):
 		super(Pooling2D, self).computeSize()

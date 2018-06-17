@@ -5,7 +5,7 @@ class Input(Layer):
 	def __init__(self, node, shape, params={}):
 		params['compute_backward'] = False
 		
-		super(Input, self).__init__(node, params)
+		super(Input, self).__init__(node, params=params)
 		self.shape = tuple(shape)
 		self.data = None
 		self.has_data = False

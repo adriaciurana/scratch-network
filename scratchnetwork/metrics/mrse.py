@@ -2,7 +2,7 @@ from .metric import Metric
 import numpy as np
 class MRSE(Metric):
 	def __init__(self, node, params={}):
-		super(MRSE, self).__init__(node, params)
+		super(MRSE, self).__init__(node, params=params)
 
 
 	def forward(self, inputs):

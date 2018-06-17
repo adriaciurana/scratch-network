@@ -3,7 +3,7 @@ import numpy as np
 class Sigmoid(Layer):
 	def __init__(self, node, params={}):
 		params['number_of_inputs'] = 1
-		super(Sigmoid, self).__init__(node, params)
+		super(Sigmoid, self).__init__(node, params=params)
 	
 	def computeSize(self):
 		super(Sigmoid, self).computeSize()

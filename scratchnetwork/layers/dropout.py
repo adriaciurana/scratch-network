@@ -3,7 +3,7 @@ import numpy as np
 class DropOut(Layer):
 	def __init__(self, node, prob, params={}):
 		params['number_of_inputs'] = 1
-		super(DropOut, self).__init__(node, params)
+		super(DropOut, self).__init__(node, params=params)
 		self.prob = prob
 	
 	def computeSize(self):

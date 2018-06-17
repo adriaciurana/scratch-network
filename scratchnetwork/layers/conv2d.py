@@ -20,8 +20,8 @@ class Conv2D(Layer):
 		elif self.padding == 'same':
 			self.padding_size = (self.kernel_size[0] // 2, self.kernel_size[1] // 2)
 
-		super(Conv2D, self).__init__(node, ('kernels', 'bias'), lambda x: \
-			np.transpose(np.reshape(x, [-1] + list(self.kernel_size) + [self.num_filters]), [0, 3, 1, 2])) #np.reshape(x, [-1, self.num_filters] + list(self.kernel_size)))
+		super(Conv2D, self).__init__(node, weights_names=('kernels', 'bias'), func_repr_weights=lambda x: \
+			np.transpose(np.reshape(x, [-1] + list(self.kernel_size) + [self.num_filters]), [0, 3, 1, 2]), params=params) #np.reshape(x, [-1, self.num_filters] + list(self.kernel_size)))
 
 	def computeSize(self):
 		super(Conv2D, self).computeSize()

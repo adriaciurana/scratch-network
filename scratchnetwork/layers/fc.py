@@ -4,7 +4,8 @@ import numpy as np
 from .cython import fc
 class FC(Layer):
 	def __init__(self, node, neurons, initializer={'weights': Initializer("normal"), 'bias': Initializer("normal")}, params={}):
-		super(FC, self).__init__(node, weights_names=('weights', 'bias'))
+		params['number_of_inputs'] = 1
+		super(FC, self).__init__(node, weights_names=('weights', 'bias'), params=params)
 		
 		self.initializer = initializer
 		self.neurons = neurons

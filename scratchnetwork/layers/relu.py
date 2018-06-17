@@ -7,7 +7,7 @@ from .cython import relu
 class ReLU(Layer):
 	def __init__(self, node, params={}):
 		params['number_of_inputs'] = 1
-		super(ReLU, self).__init__(node, params)
+		super(ReLU, self).__init__(node, params=params)
 	
 	def computeSize(self):
 		super(ReLU, self).computeSize()

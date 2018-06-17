@@ -118,7 +118,7 @@ class Node(object):
 		# La diferencia entre un capa normal y una loss es que la loss debe añadirse al final de todo el proceso de la red
 		# Eso es debido a que tiene una naturala distinta al contener los datos en un funcional.
 		has_any_backward_to_compute = self.number_backward_any_prevs_nodes # any([n.compute_backward for n in self.prevs])
-
+		
 		#global t
 		#t = time.time()
 		backward = self.computeBackwardAndCorrect(has_any_backward_to_compute)
@@ -160,7 +160,7 @@ class Node(object):
 
 	def computeNumberOfBackwardNodes(self):
 		# para no tener que calcularlo en cada iteracion, lo calculamos en la compilacion
-		self.number_backward_sum_nexts_nodes = sum([n.compute_backward for n in self.nexts])
+		self.number_backward_sum_nexts_nodes = sum([int(n.compute_backward) for n in self.nexts])
 		self.number_backward_any_prevs_nodes = any([n.compute_backward for n in self.prevs])
 
 	""" 

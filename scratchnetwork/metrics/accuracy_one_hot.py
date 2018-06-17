@@ -2,7 +2,7 @@ from .metric import Metric
 import numpy as np
 class Accuracy(Metric):
 	def __init__(self, node, params={}):
-		super(Accuracy, self).__init__(node, params)
+		super(Accuracy, self).__init__(node, params=params)
 
 
 	def forward(self, inputs):

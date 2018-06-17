@@ -4,7 +4,7 @@ from .cython import softmax
 class Softmax(Layer):
 	def __init__(self, node, params={}):
 		params['number_of_inputs'] = 1
-		super(Softmax, self).__init__(node, params)
+		super(Softmax, self).__init__(node, params=params)
 	
 	def computeSize(self):
 		super(Softmax, self).computeSize()
