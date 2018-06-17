@@ -92,19 +92,14 @@ class Node(object):
 	def clearBackwardResults(self):
 		self.temp_backward_result = None
 
-	def computeBackwardAndCorrect(self, has_any_backward_to_compute):
+	def computeBackwardAndCorrect(self):
 		# Obtenemos las derivadas de las proximas salidas
 		doutput = self.temp_backward_result
-		if has_any_backward_to_compute:
-			unpack_derivatives = self.layer.derivatives(doutput)
-			if isinstance(unpack_derivatives, (list, tuple)):
-				backward, dweights = unpack_derivatives
-			else:
-				backward = unpack_derivatives
-				dweights = None
-
+		unpack_derivatives = self.layer.derivatives(doutput)
+		if isinstance(unpack_derivatives, (list, tuple)):
+			backward, dweights = unpack_derivatives
 		else:
-			backward = None
+			backward = unpack_derivatives
 			dweights = None
 
 		# Transferimos las contribuciones dentro de la capa para corregir los pesos internos
@@ -121,7 +116,7 @@ class Node(object):
 		
 		#global t
 		#t = time.time()
-		backward = self.computeBackwardAndCorrect(has_any_backward_to_compute)
+		backward = self.computeBackwardAndCorrect()
 		#print(self.name, time.time() - t)
 
 		# si no tiene backward o no tiene nodos a los que enviar nada, el proceso se termina
