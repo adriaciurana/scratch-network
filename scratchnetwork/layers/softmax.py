@@ -23,11 +23,11 @@ class Softmax(Layer):
 		self.values.input = e_x
 		self.values.sum = div
 		return e_x / div"""
-		self.values.o = softmax.nb_forward(inputs[0])
-		return self.values.o
+		self.values.out = softmax.nb_forward(inputs[0])
+		return self.values.out
 		
 	def derivatives(self, doutput):
 		#https://stats.stackexchange.com/questions/265905/derivative-of-softmax-with-respect-to-weights
-		dx = softmax.nb_derivatives(doutput, self.values.o)
+		dx = softmax.nb_derivatives(doutput, self.values.out)
 		return dx
 		
