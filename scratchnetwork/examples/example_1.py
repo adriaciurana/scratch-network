@@ -15,15 +15,15 @@ inputX = net.Node("Input", Input, [10])
 inputY = net.Node("Y", Input, [1])
 
 B = net.Node("B", FC, 10)
-#Br = net.Node("B_relu", ReLU)
+Br = net.Node("B_relu", ReLU)
 C = net.Node("Output", FC, 1)
 
 L1 = net.Node("MSE", MSE)
 M1 = net.Node("MRSE", MRSE)
 
 inputX.addNext(B)
-#B.addNext(Br)
-B.addNext(C)
+B.addNext(Br)
+Br.addNext(C)
 
 L1.addPrev(C)
 L1.addPrev(inputY)

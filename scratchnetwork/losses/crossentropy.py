@@ -11,9 +11,7 @@ class CrossEntropy(Loss):
 		self.values.pred = pred
 		self.values.true = true
 		out = - true*np.log(pred)
-		self.values.out = out
-		out = np.reshape(out, [true.shape[0], -1])
-		return np.mean((out**2).flatten(), axis=0)
+		return np.mean(np.sum(out, axis=-1), axis=0)
 
 	def derivatives(self, doutput=None):
 		return - self.values.true/self.values.pred

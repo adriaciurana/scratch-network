@@ -198,9 +198,10 @@ class Network(object):
 		graph = pydot.Dot(graph_type='digraph')
 		graph.set_node_defaults(shape='none', fontname='Courier', fontsize='10')
 		nodes = {}
-		for n in self.nodes.values():
+		for i, n in enumerate(self.nodes.values()):
 			#graph.add_node(pydot.Node(n.name, label='{'+n.name + " (" + type(n.layer).__name__ + ")\\n|- In: " + str(n.layer.in_size)+ "\\n|- Out: " + str(n.layer.out_size) + '}'))
-			graph.add_node(pydot.Node(n.name, label=
+			nodes[n] = i
+			graph.add_node(pydot.Node(i, label=
 				u'<<table border="1" cellspacing="0"> \
 					<tr><td border="1" sides="B" bgcolor="#dddddd"><font color="#d71414">'+n.name + ' (' + type(n.layer).__name__ + ')</font></td></tr> \
 					<tr><td border="1" sides="B" style="dashed">in: ' + str(n.layer.in_size) + '</td></tr> \
@@ -208,7 +209,7 @@ class Network(object):
 				</table>>'))
 		for n in self.nodes.values():
 			for nn in n.nexts:
-				graph.add_edge(pydot.Edge(n.name, nn.name))
+				graph.add_edge(pydot.Edge(nodes[n], nodes[nn]))
 		graph.write_png(filestr)
 
 	def get_weights(self, name):

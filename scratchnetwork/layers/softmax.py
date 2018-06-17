@@ -1,5 +1,6 @@
 from .layer import Layer
 import numpy as np
+from .cython import softmax
 class Softmax(Layer):
 	def __init__(self, node, params={}):
 		params['number_of_inputs'] = 1
@@ -12,7 +13,7 @@ class Softmax(Layer):
 	def forward(self, inputs):
 		super(Softmax, self).forward(inputs)
 
-		z = inputs[0]
+		"""z = inputs[0]
 		assert len(z.shape) == 2
 		s = np.max(z, axis=1)
 		s = s[:, np.newaxis] # necessary step to do broadcasting
@@ -21,8 +22,12 @@ class Softmax(Layer):
 		div = div[:, np.newaxis] # dito
 		self.values.input = e_x
 		self.values.sum = div
-		return e_x / div
+		return e_x / div"""
+		self.values.o = softmax.nb_forward(inputs[0])
+		return self.values.o
 		
 	def derivatives(self, doutput):
-		partial = self.values.input*(self.values.sum - self.values.input)/(self.values.input**2)
-		return doutput*partial
+		#https://stats.stackexchange.com/questions/265905/derivative-of-softmax-with-respect-to-weights
+		dx = softmax.nb_derivatives(doutput, self.values.o)
+		return dx
+		
