@@ -5,7 +5,10 @@ from .cython import relu2d
 from .cython import relu1d
 from .cython import relu
 class ReLU(Layer):
-	def __init__(self, node, params={}):
+	def __init__(self, node, params=None):
+		if params is None:
+			params = {}
+			
 		params['number_of_inputs'] = 1
 		super(ReLU, self).__init__(node, params=params)
 	

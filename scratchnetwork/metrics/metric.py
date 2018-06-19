@@ -1,7 +1,10 @@
 from ..losses.loss import Loss
 import numpy as np
 class Metric(Loss):
-	def __init__(self, node, params={}):
+	def __init__(self, node, params=None):
+		if params is None:
+			params = {}
+			
 		params['compute_backward'] = False	
 		# No produce dependencias ya que no participa en el forward (porque es un nodo final) ni participa en el backward porque es una metrica.
 		super(Metric, self).__init__(node, params=params)

@@ -2,6 +2,7 @@ import sys
 import os
 import numpy as np
 import time
+import h5py
 
 sys.path.append(os.path.dirname(__file__)+"../../../")
 from scratchnetwork import Network
@@ -17,7 +18,7 @@ from scratchnetwork.losses import SoftmaxCrossEntropy
 from scratchnetwork.metrics import Accuracy
 from scratchnetwork.optimizers import SGD
 from scratchnetwork.regularizators import L1 as LR1C
-LR1 = LR1C(0)
+LR1 = LR1C()
 
 
 # MNIST LOAD
@@ -37,20 +38,20 @@ net = Network()
 inputX = net.Node("Input", Input, [28, 28, 1])
 inputY = net.Node("Label", Input, [10])
 
-B1 = net.Node("Block 1: Conv2D", Conv2D, num_filters=32, kernel_size=(3,3), params={'regularization': LR1})
+B1 = net.Node("Block 1: Conv2D", Conv2D, num_filters=32, kernel_size=(3,3), params={'regularizator': LR1})
 B1relu = net.Node("Block 1: ReLU", ReLU)
 
-B2 = net.Node("Block 2: Conv2D", Conv2D, num_filters=64, kernel_size=(3,3), params={'regularization': LR1})
+B2 = net.Node("Block 2: Conv2D", Conv2D, num_filters=64, kernel_size=(3,3), params={'regularizator': LR1})
 B2relu = net.Node("Block 2: ReLU", ReLU)
 B2max = net.Node("Block 2: Maxpooling", Pooling2D, "max", pool_size=(2, 2))
 B2drop = net.Node("Block 2: Dropout", DropOut, 1)#0.25)
 B2flatten = net.Node("Block 2: Flatten", Flatten)
 
-FC1 = net.Node("FC 1: FC", FC, 128, params={'regularization': LR1})
+FC1 = net.Node("FC 1: FC", FC, 128, params={'regularizator': LR1})
 FC1relu = net.Node("FC 1: ReLU", ReLU)
 FC1drop = net.Node("FC 1: Dropout", DropOut, 1)#0.5)
 
-FC2 = net.Node("FC 2: FC ", FC, 10, params={'regularization': LR1})
+FC2 = net.Node("FC 2: FC ", FC, 10, params={'regularizator': LR1})
 FC2softmax = net.Node("FC 2: Softmax", Softmax)
 """
 FC2softmax = net.Node("FC 2: Softmax", Softmax)
@@ -101,7 +102,7 @@ batch_index = 0
 batch_size = 64
 epoch = 0
 
-for i in range(100000):
+for i in range(1):
 	Xaux = images_train[batch_index:(batch_index + batch_size)]
 	Yaux = labels_train[batch_index:(batch_index + batch_size)]
 
@@ -113,7 +114,8 @@ for i in range(100000):
 		epoch += 1
 	
 	net.monitoring()
-	print(str(batch_index) + "/" + str(epoch))
-	print('-----'+ str(time.time() - t) +'------')
+
+
+print(net.save("example.h5"))
 out = net.predict({'Input': a})
 print(np.hstack((out['FC 2: Softmax'], b)))

@@ -1,7 +1,10 @@
 from .metric import Metric
 import numpy as np
 class Accuracy(Metric):
-	def __init__(self, node, params={}):
+	def __init__(self, node, params=None):
+		if params is None:
+			params = {}
+			
 		super(Accuracy, self).__init__(node, params=params)
 
 

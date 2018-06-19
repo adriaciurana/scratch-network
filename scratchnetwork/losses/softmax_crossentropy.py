@@ -1,7 +1,10 @@
 from .loss import Loss
 import numpy as np
 class SoftmaxCrossEntropy(Loss):
-	def __init__(self, node, params={}):
+	def __init__(self, node, params=None):
+		if params is None:
+			params = {}
+			
 		super(SoftmaxCrossEntropy, self).__init__(node, params=params)
 	
 	def computeSize(self):

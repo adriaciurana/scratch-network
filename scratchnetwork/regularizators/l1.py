@@ -1,4 +1,4 @@
-from .regularizatior import Regularizator
+from .regularizator import Regularizator
 import numpy as np
 class L1(Regularizator):
 	def __init__(self, lambda_value=0.0005):

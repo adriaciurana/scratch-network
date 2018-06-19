@@ -1,3 +1,4 @@
+import h5py
 import numpy as np
 from .layers.layer import Layer
 from .layers.input import Input
@@ -11,7 +12,13 @@ class Node(object):
 		self.temp_backward_dependences = 0
 		
 		self.network = network
-		self.name = name
+		if isinstance(name, (list, tuple)):
+			self.name = name[1]
+			self.label = name[0]
+		else:
+			self.name = name
+			self.label = name
+		self.type = None
 
 		# Parametros pre-creacion de la capa
 		self.compute_forward_in_prediction = True
@@ -28,6 +35,10 @@ class Node(object):
 		# relaciones que tiene el nodo
 		self.prevs = []
 		self.nexts = []
+
+		# auxiliares
+		self.number_backward_sum_nexts_nodes = None
+		self.number_backward_any_prevs_nodes = None
 
 	"""
 		RELATIONS
@@ -67,8 +78,6 @@ class Node(object):
 
 	def computeForward(self):
 		inputs = [n.temp_forward_result for n in self.prevs]
-		if self.network.firstForward:
-			self.layer.firstForward(inputs)
 		return self.layer.forward(inputs)
 		
 	def forward(self):
@@ -106,6 +115,7 @@ class Node(object):
 	def computeBackwardAndCorrect(self):
 		# Obtenemos las derivadas de las proximas salidas
 		doutput = self.temp_backward_result
+		#print(self.compute_backward, self.name)
 		unpack_derivatives = self.layer.derivatives(doutput)
 		if isinstance(unpack_derivatives, (list, tuple)):
 			backward, dweights = unpack_derivatives
@@ -187,9 +197,9 @@ class Node(object):
 	
 	def computeSize(self):
 		self.layer.in_size = [n.layer.out_size for n in self.prevs]
-		self.layer.in_size_flatten = [np.prod(s) for s in self.layer.in_size]
-		self.layer.out_size = self.layer.computeSize()
-		self.layer.out_size_flatten = np.prod(self.layer.out_size)
+		self.layer.in_size_flatten = [int(np.prod(s)) for s in self.layer.in_size]
+		self.layer.out_size = [int(n) for n in self.layer.computeSize()]
+		self.layer.out_size_flatten = int(np.prod(self.layer.out_size))
 		for n in self.nexts:
 			# Solo se podra ejecutar si todas las dependencias han terminado de calcularse.
 			if n.checkComputeSizeDependences():
@@ -214,13 +224,13 @@ class Node(object):
 	def determineNode(self):
 		if len(self.prevs) == 0 and len(self.nexts) == 0:
 			self.type = Node.NOT_CONNECTED
-			self.network.nodes_not_connected[self.name] = self
+			self.network.nodes_not_connected[self.label] = self
 		elif len(self.prevs) == 0:
 			self.type = Node.INPUT
-			self.network.nodes_with_only_outputs[self.name] = self
+			self.network.nodes_with_only_outputs[self.label] = self
 		elif len(self.nexts) == 0:
 			self.type = Node.OUTPUT
-			self.network.nodes_with_only_inputs[self.name] = self
+			self.network.nodes_with_only_inputs[self.label] = self
 		else:
 			self.type = Node.MIDDLE
 
@@ -228,7 +238,7 @@ class Node(object):
 		try:
 			self.layer.fill(data)
 		except AttributeError:
-			raise Exceptions.LayerHasNoFillMethod("La capa " + self.node.name + "(" + type(self).__name__ + ") no puede llenarse.")
+			raise Exceptions.LayerHasNoFillMethod("La capa " + self.name + "(" + type(self).__name__ + ") no puede llenarse.")
 	
 	def batchSize(self):
 		return self.layer.batch_size
@@ -239,10 +249,12 @@ class Node(object):
 
 		copy_node_instance.network = self.network
 		copy_node_instance.name = name_prepend + self.name
+		copy_node_instance.label = name_prepend + self.label
 		copy_node_instance.temp_forward_dependences = 0
 		copy_node_instance.temp_backward_dependences = 0
 		copy_node_instance.compute_forward_in_prediction = self.compute_forward_in_prediction
 		copy_node_instance.compute_backward = self.compute_backward
+		
 		if copy_layer:
 			copy_node_instance.layer = self.layer.copy(copy_node_instance)
 		else:
@@ -254,3 +266,40 @@ class Node(object):
 	@property
 	def weights(self):
 		return self.layer.weights
+
+	"""
+		Save
+	"""
+	def save(self, id_node, h5_container):
+		layer_json = self.layer.save(h5_container.create_group("layer"))
+		
+		return \
+		{'id': id_node,
+		'label': self.label,
+		'name': self.name,
+		'compute_forward_in_prediction': self.compute_forward_in_prediction,
+		'compute_backward': self.compute_backward,
+		'layer': layer_json}
+
+	@staticmethod
+	def load_static(network, data, h5_container):
+		obj = Node.__new__(Node)
+		obj.label = data['label']
+		obj.name = data['name']
+		obj.compute_forward_in_prediction = data['compute_forward_in_prediction']
+		obj.compute_backward = data['compute_backward']
+		obj.layer = Layer.load_static(obj, data['layer'], h5_container['layer'])
+
+		# constructor normal
+		obj.temp_forward_dependences = 0
+		obj.temp_backward_dependences = 0
+		
+		obj.network = network
+
+		obj.prevs = []
+		obj.nexts = []
+
+		# auxiliares
+		obj.number_backward_sum_nexts_nodes = None
+		obj.number_backward_any_prevs_nodes = None
+		return obj

@@ -4,8 +4,12 @@ import numpy as np
 from .cython import fc
 import threading
 class FC(Layer):
-	def __init__(self, node, neurons, initializer={'weights': Initializer("normal"), 'bias': Initializer("normal")}, params={}):
+	def __init__(self, node, neurons, initializer={'weights': Initializer("normal"), 'bias': Initializer("normal")}, params=None):
+		if params is None:
+			params = {}
+
 		params['number_of_inputs'] = 1
+		params['avoid_to_save'] = ['initializer']
 		super(FC, self).__init__(node, weights_names=('weights', 'bias'), params=params)
 		
 		self.initializer = initializer
@@ -24,24 +28,10 @@ class FC(Layer):
 
 	def forward(self, inputs):
 		super(FC, self).forward(inputs)
-		
-		
+			
 		self.values.input = inputs[0]
 		out = self.values.input.dot(self.weights.weights) + self.weights.bias
 		return out.reshape([-1] + list(self.out_size))
-
-		"""self.values.input = inputs[0]
-		out = np.empty(shape=[inputs[0].shape[0]] + list(self.out_size))
-		def thread_main(cidx):
-			out[cidx:cidx+1] = fc.nb_forward(self.values.input[cidx:cidx+1], self.weights.weights, self.weights.bias)[0]
-		threads = [threading.Thread(target=thread_main, args=(cidx,)) for cidx in range(self.values.input.shape[0])]
-		
-		for thread in threads:
-			thread.start()
-		for thread in threads:
-			thread.join()"""
-		#out = fc.nb_forward(self.values.input, self.weights.weights, self.weights.bias)
-		return out
 
 	def derivatives(self, doutput):
 		
@@ -59,20 +49,12 @@ class FC(Layer):
 		# el resultado es una matriz de (input_size)x(output_size)
 		dw =  self.values.input.T.dot(doutput)
 		return dx, (dw, np.sum(doutput, axis=0))
-		#dx, dw, db = fc.nb_derivatives(doutput, self.values.input, self.weights.weights)
-		"""dx = np.empty(shape=[doutput.shape[0]] + [self.in_size_flatten[0]])
-		dw = np.empty(shape=[doutput.shape[0]] + list(self.weights.weights.shape))
-		db = np.empty(shape=[doutput.shape[0]] + list(self.weights.bias.shape))
-		def thread_main(cidx):
-			aux = fc.nb_derivatives(doutput[cidx:cidx+1], self.values.input[cidx:cidx+1], self.weights.weights)
-			dx[cidx] = aux[0][0]
-			dw[cidx] = aux[1]
-			db[cidx] = aux[2]
-		threads = [threading.Thread(target=thread_main, args=(cidx,)) for cidx in range(doutput.shape[0])]
-		for thread in threads:
-			thread.start()
-		for thread in threads:
-			thread.join()
-		dw = dw.sum(axis=0)
-		db = db.sum(axis=0)
-		return np.reshape(dx, [-1] + list(self.in_size[0])), (dw, db)"""
+	
+	def save(self, h5_container):
+		layer_json = super(FC, self).save(h5_container)
+		layer_json['attributes']['neurons'] = self.neurons
+		return layer_json
+
+	def load(self, data, h5_container):
+		super(FC, self).load(data, h5_container)
+		self.neurons = data['attributes']['neurons']

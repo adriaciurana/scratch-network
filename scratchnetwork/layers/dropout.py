@@ -1,7 +1,10 @@
 from .layer import Layer
 import numpy as np
 class DropOut(Layer):
-	def __init__(self, node, prob, params={}):
+	def __init__(self, node, prob, params=None):
+		if params is None:
+			params = {}
+			
 		params['number_of_inputs'] = 1
 		super(DropOut, self).__init__(node, params=params)
 		self.prob = prob
@@ -22,3 +25,13 @@ class DropOut(Layer):
 
 	def derivatives(self, doutput):
 		return doutput*self.values.mask
+
+	def save(self, h5_container):
+		layer_json = super(DropOut, self).save(h5_container)
+		layer_json['attributes']['prob'] = self.prob
+		return layer_json
+		
+	def load(self, data, h5_container):
+		super(DropOut, self).load(data, h5_container)
+		self.prob = data['attributes']['prob']
+		

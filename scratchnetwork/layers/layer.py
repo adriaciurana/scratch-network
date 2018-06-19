@@ -1,17 +1,20 @@
+import h5py
+import sys
 import numpy as np
 from ..backend.exceptions import Exceptions
+from ..backend.misc import Misc
+from ..regularizators.regularizator import Regularizator
 
 #import time
 #t = time.time()
 class Layer(object):
-	def __init__(self, node, weights_names=None, func_repr_weights=lambda x: x, params={}):
+	def __init__(self, node, weights_names=None, func_repr_weights=lambda x: x, params=None):
+		if params is None:
+			params = {}
+
 		self.node = node
 		# pesos de la capa
 		self.weights = Layer.Weights(func_repr_weights)
-		if weights_names is None:
-			self.iweights = 0.
-		else:
-			self.iweights = [0. for i in weights_names]
 		self.weights_names = weights_names
 		# valores intermedios de la capa
 		self.values = Layer.Values()
@@ -19,12 +22,9 @@ class Layer(object):
 		self.params = params
 
 		# regularizacion
-		self.regularization = lambda weight: 0
+		self.regularizator = None
 		self.is_trainable = True
 		self.compute_backward = True
-			
-
-
 
 	def computeSize(self):
 		if 'same_input_shape' in self.params:
@@ -36,9 +36,11 @@ class Layer(object):
 		# inicializaciones
 		if 'compute_forward_in_prediction' in self.params:
 			self.node.compute_forward_in_prediction = self.params['compute_forward_in_prediction']
+			del self.params['compute_forward_in_prediction']
 
 		if 'compute_backward' in self.params:
 			self.compute_backward = self.params['compute_backward']
+			del self.params['compute_backward']
 
 		if 'number_of_inputs' in self.params:
 			if self.params['number_of_inputs'] < len(self.node.prevs):
@@ -48,13 +50,12 @@ class Layer(object):
 			elif self.params['number_of_inputs'] > len(self.node.prevs):
 				raise Exceptions.NumberInputsException("Numero de entradas inferiores (" \
 				 + self.params['number_of_inputs'] + ") en " + type(self).__name__ + ":" + self.node.name)
+			del self.params['number_of_inputs']
 		
-		if 'regularization' in self.params:
-			self.regularization = self.params['regularization'].function
-
-	def firstForward(self, inputs):
-		pass
-
+		if 'regularizator' in self.params:
+			self.regularizator = self.params['regularizator']
+			del self.params['regularizator']
+		
 	def forward(self, inputs):
 		"""global t
 		t1 = time.time()
@@ -77,7 +78,9 @@ class Layer(object):
 			c = self.__class__
 			copy_weights_instance = c.__new__(c)
 			
-			for w in self.__attrs__:
+			for w in self.__dict__:
+				if w == 'func_repr':
+					continue
 				setattr(copy_weights_instance, w, copy.copy(getattr(self, w)))
 			return copy_weights_instance
 
@@ -85,6 +88,18 @@ class Layer(object):
 			if isinstance(self.func_repr, dict):
 				return self.func_repr[name](getattr(self, name))
 			return self.func_repr(getattr(self, name))
+
+		def save(self, h5_container):
+			for w in self.__dict__:
+				if w == 'func_repr':
+					continue
+				attr = getattr(self, w)
+				h5_container.create_dataset(w, data=attr, dtype=attr.dtype)
+
+		def load(self, h5_container):
+			for name in h5_container.keys():
+				attr = h5_container[name].value
+				setattr(self, name, attr)
 
 	class Values(object):
 		def copy(self):
@@ -96,10 +111,12 @@ class Layer(object):
 			return copy_values_instance
 
 	def getRegularization(self, name, weight):
-		if isinstance(self.regularization, dict):
-			return self.regularization[name](weight)
+		if isinstance(self.regularizator, dict):
+			return self.regularizator[name].function(weight)
 		else:
-			return self.regularization(weight)
+			if self.regularizator is None:
+				return 0
+			return self.regularizator.function(weight)
 	""" 
 	Para actualizar un peso se necesitan diversos parametros:
 		Loss: donde se esta contribuyendo, desconocemos el funcional que se ha usado 
@@ -107,7 +124,7 @@ class Layer(object):
 		weights_losses: Indica el peso de cada loss, por defecto este es 1/num_losses
 		name: indica el nombre del parametro a actualizar
 	"""
-	def correctWeight(self, name, dweight, iweight):
+	def correctWeight(self, label, name, dweight):
 		# primero obtenemos el peso a corregir
 		w = getattr(self.weights, name)
 		# aplicamos el funcional respecto al batch
@@ -117,9 +134,8 @@ class Layer(object):
 		dweight = dweight + self.getRegularization(name, w)
 
 		# realizamos la correccion con respecto al optimizador
-		iweight = self.node.network.optimizer.step(dweight, iweight)
+		iweight = self.node.network.optimizer.step(label, name, dweight)
 		setattr(self.weights, name, w + iweight)
-		return iweight
 
 	def correctWeights(self, dweights):
 		#import time
@@ -127,9 +143,9 @@ class Layer(object):
 		if isinstance(dweights, (list, tuple)):
 			for i, dw in enumerate(dweights):
 				# aplicamos las correciones a los pesos
-				self.iweights[i] = self.correctWeight(self.weights_names[i], dw, self.iweights[i])
+				self.correctWeight(self.node.label, self.weights_names[i], dw)
 		else:
-			self.iweights = self.correctWeight(self.weights_names[0], dweights, self.iweights)
+			self.correctWeight(self.node.label, self.weights_names[0], dweights)
 		#print(time.time() - a0)
 
 	"""
@@ -154,3 +170,44 @@ class Layer(object):
 	@property
 	def batch_size(self):
 		return self.node.network.batch_size
+
+	"""
+		Save
+	"""
+	def save(self, h5_container):
+		layer_json = {'type': self.__class__.__name__, 'module': self.__class__.__module__, 'attributes':{}}
+		layer_json['hash'] = Misc.hash(layer_json['module'], layer_json['type'])
+		if self.regularizator is not None:
+			layer_json['attributes']['regularizator'] = self.regularizator.save(h5_container.create_group("regularizator"))
+		self.weights.save(h5_container.create_group("weights"))
+		layer_json['attributes']['weights_names'] = self.weights_names
+		layer_json['attributes']['is_trainable'] = self.is_trainable
+		layer_json['attributes']['compute_backward'] = self.compute_backward
+		layer_json['attributes']['params'] = self.params
+		
+		return layer_json
+
+	def load(self, data, h5_container):
+		pass
+
+
+	@staticmethod
+	def load_static(node, data, h5_container):
+		if not Misc.check_hash(data['module'], data['type'], data['hash']):
+			raise IndexError # Error
+		my_class = Misc.import_class(data['module'], data['type'])
+		obj = my_class.__new__(my_class)
+		if 'regularizator' in data['attributes']:
+			obj.regularizator = Regularizator.load_static(data['attributes']['regularizator'], h5_container['regularizator'])
+		else:
+			obj.regularizator = None
+		obj.weights = Layer.Weights()
+		obj.weights.load(h5_container['weights'])
+		obj.values = Layer.Values()
+		obj.weights_names = data['attributes']['weights_names']
+		obj.is_trainable = data['attributes']['is_trainable']
+		obj.compute_backward = data['attributes']['compute_backward']
+		obj.params = data['attributes']['params']
+		obj.node = node
+		obj.load(data, h5_container)
+		return obj
