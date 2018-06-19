@@ -17,7 +17,7 @@ class ReLU(Layer):
 		super(ReLU, self).forward(inputs)
 		input = inputs[0]
 
-		if len(self.in_size[0]) == 3:
+		"""if len(self.in_size[0]) == 3:
 			self.values.input = relu3d.nb_forward(input)
 			return self.values.input
 
@@ -30,7 +30,9 @@ class ReLU(Layer):
 			return self.values.input
 		else:
 			self.values.input = relu.nb_forward(input.flatten())
-			return self.values.input.reshape(input.shape)
+			return self.values.input.reshape(input.shape)"""
+		self.values.input = inputs[0]
+		return np.maximum(0, self.values.input)
 
 
 		"""input = abs(input) * (input > 0)
@@ -40,7 +42,7 @@ class ReLU(Layer):
 	def derivatives(self, doutput):
 		"""partial = self.values.input > 0
 		return doutput*partial"""
-		if len(self.out_size) == 3:
+		"""if len(self.out_size) == 3:
 			return relu3d.nb_derivatives(doutput, self.values.input)
 
 		elif len(self.out_size) == 2:
@@ -51,7 +53,11 @@ class ReLU(Layer):
 
 		else:
 			dx = relu.nb_derivatives(doutput.flatten(), self.values.input)
-			return dx.reshape(doutput.shape)
+			return dx.reshape(doutput.shape)"""
+		dx = np.array(doutput, copy=True)
+		dx[self.values.input <= 0] = 0
+		return dx
+  
 
 
 

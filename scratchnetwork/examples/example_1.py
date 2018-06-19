@@ -31,7 +31,7 @@ L1.addPrev(inputY)
 M1.addPrev(C)
 M1.addPrev(inputY)
 
-net.compile(losses=[L1], metrics=[M1], optimizer=SGD(lr=0.1, clip=1))
+net.compile(losses=[L1], metrics=[M1], optimizer=SGD(lr=0.1, clip=10))
 net.start(inputs=[inputX], outputs=[C])
 net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
 
@@ -41,7 +41,7 @@ b = np.dot(a, np.random.rand(10, 1)) #np.dot(np.sign(a)*a**2, 100*np.random.rand
 
 batch_index = 0
 batch_size = 20
-for i in range(1000):
+for i in range(100000):
 	Xaux = a[batch_index:(batch_index + batch_size)]
 	Yaux = b[batch_index:(batch_index + batch_size)]
 

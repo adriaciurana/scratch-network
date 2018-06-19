@@ -2,9 +2,10 @@ from .layer import Layer
 from ..backend.initializer import Initializer
 import numpy as np
 from .cython import conv2d
+import threading
 
 class Conv2D(Layer):
-	def __init__(self, node, num_filters, kernel_size=(3,3), stride=(1, 1), padding='valid', initializer={'weights': Initializer("normal"), 'bias': Initializer("normal")}, params={}):
+	def __init__(self, node, num_filters, kernel_size=(3,3), stride=(1, 1), padding='valid', initializer={'weights': Initializer("lecun"), 'bias': Initializer("normal")}, params={}):
 		self.initializer = initializer
 		self.num_filters = num_filters
 		self.kernel_size = kernel_size
@@ -37,13 +38,24 @@ class Conv2D(Layer):
 			self.num_dim = 1
 		else:
 			self.num_dim = self.in_size[0][2]
-		self.weights.kernels = self.initializer['weights'].get(shape=(self.num_dim, self.kernel_size[0], self.kernel_size[1], self.num_filters))/(self.kernel_size[0] * self.kernel_size[1] * self.num_filters)
+		self.weights.kernels = self.initializer['weights'].get(shape=(self.num_dim, self.kernel_size[0], self.kernel_size[1], self.num_filters))/(self.kernel_size[0] * self.kernel_size[1] * self.num_dim)
 		self.weights.bias = self.initializer['bias'].get(shape=[self.num_filters])
 
 	def forward(self, inputs):
 		super(Conv2D, self).forward(inputs)
 
 		self.values.input = np.pad(inputs[0], [(0, 0), (self.padding_size[0], self.padding_size[0]), (self.padding_size[1], self.padding_size[1]), (0, 0)], mode='constant')
+		
+		"""out = np.empty(shape=[inputs[0].shape[0]] + list(self.out_size))
+		def thread_main(cidx):
+			out[cidx:cidx+1] = conv2d.nb_forward(self.values.input[cidx:cidx+1], self.weights.kernels, self.weights.bias, self.stride)[0]
+		threads = [threading.Thread(target=thread_main, args=(cidx,)) for cidx in range(self.values.input.shape[0])]
+		
+		for thread in threads:
+			thread.start()
+		for thread in threads:
+			thread.join()
+		"""
 		out = conv2d.nb_forward(self.values.input, self.weights.kernels, self.weights.bias, self.stride)
 		"""
 		for i in range(self.out_size[0]):
@@ -58,7 +70,23 @@ class Conv2D(Layer):
 
 
 	def derivatives(self, doutput):
+		"""dx = np.empty(shape=[doutput.shape[0], self.in_size[0][0] + 2*self.padding_size[0], self.in_size[0][1] + 2*self.padding_size[1], self.in_size[0][2]])
+		dw = np.empty(shape=[doutput.shape[0]] + list(self.weights.kernels.shape))
+		db = np.empty(shape=[doutput.shape[0]] + list(self.weights.bias.shape))
+		def thread_main(cidx):
+			aux = conv2d.nb_derivatives(doutput[cidx:cidx+1], self.values.input[cidx:cidx+1], self.weights.kernels, self.stride)
+			dx[cidx] = aux[0][0]
+			dw[cidx] = aux[1]
+			db[cidx] = aux[2]
+		threads = [threading.Thread(target=thread_main, args=(cidx,)) for cidx in range(doutput.shape[0])]
+		for thread in threads:
+			thread.start()
+		for thread in threads:
+			thread.join()
+		dw = dw.sum(axis=0)
+		db = db.sum(axis=0)"""
 		dx, dw, db = conv2d.nb_derivatives(doutput, self.values.input, self.weights.kernels, self.stride)
+		#print([dw.max(), dw.min()], [db.max(), db.min()])
 		"""
 		for i in range(self.out_size[0]):
 			for j in range(self.out_size[1]):

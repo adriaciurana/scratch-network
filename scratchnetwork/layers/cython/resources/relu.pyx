@@ -6,10 +6,12 @@ cimport numpy as np
 from types cimport FLOAT64
 
 # forward
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def nb_forward(np.ndarray[FLOAT64, ndim=1] inputv):
 	cdef unsigned long int size = inputv.shape[0]
 
-	cdef np.ndarray[FLOAT64, ndim=1] out = np.zeros(shape=[size], dtype=np.float64)
+	cdef np.ndarray[FLOAT64, ndim=1] out = np.empty(shape=[size], dtype=np.float64)
 
 	cdef unsigned long int i
 	for i in range(size):
@@ -21,10 +23,12 @@ def nb_forward(np.ndarray[FLOAT64, ndim=1] inputv):
 
 
 # derivatives
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def nb_derivatives(np.ndarray[FLOAT64, ndim=1] doutput, np.ndarray[FLOAT64, ndim=1] inputv):
 	cdef unsigned long int size = inputv.shape[0]
 
-	cdef np.ndarray[FLOAT64, ndim=1] dx = np.zeros(shape=[size], dtype=np.float64)
+	cdef np.ndarray[FLOAT64, ndim=1] dx = np.empty(shape=[size], dtype=np.float64)
 
 	cdef unsigned long int i
 	for i in range(size):

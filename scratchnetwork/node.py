@@ -1,5 +1,6 @@
 import numpy as np
 from .layers.layer import Layer
+from .layers.input import Input
 from .backend.exceptions import Exceptions
 
 import time
@@ -15,7 +16,7 @@ class Node(object):
 		# Parametros pre-creacion de la capa
 		self.compute_forward_in_prediction = True
 
-		self.compute_backward = True
+		self.compute_backward = False
 		# indicamos si produce o no dependencia tanto en el forward como el backward, las metricas no bloquean las dependencias ya que no participan en el juego solo evaluan.
 		
 		if issubclass(layer, Layer):
@@ -39,6 +40,14 @@ class Node(object):
 	def addPrev(self, node):
 		self.prevs.append(node)
 		node.nexts.append(self)
+
+	def __call_(self, node):
+		if isinstance(node, (list, tuple)):
+			for n in node:
+				self.addPrev(n)
+		else:
+			self.addPrev(node)
+
 
 	# Las variables que empiezan por temp, son temporales y son las que se usan en el flujo del programa.
 	"""
@@ -67,7 +76,9 @@ class Node(object):
 		if self.network.predict_flag and not self.compute_forward_in_prediction:
 			return
 
+		#t = time.time()
 		result = self.computeForward()
+		#print('F: ',self.name, time.time() - t)
 		self.temp_forward_result = result
 		for n in self.nexts:
 			n.incrementForwardDependences()
@@ -114,10 +125,9 @@ class Node(object):
 		# Eso es debido a que tiene una naturala distinta al contener los datos en un funcional.
 		has_any_backward_to_compute = self.number_backward_any_prevs_nodes # any([n.compute_backward for n in self.prevs])
 		
-		#global t
 		#t = time.time()
 		backward = self.computeBackwardAndCorrect()
-		#print(self.name, time.time() - t)
+		#print('B: ',self.name, time.time() - t)
 
 		# si no tiene backward o no tiene nodos a los que enviar nada, el proceso se termina
 		if not has_any_backward_to_compute or backward is None:
@@ -147,6 +157,7 @@ class Node(object):
 
 				# Solo se podra ejecutar si todas las dependencias han terminado de calcularse.
 				n.incrementBackwardDependences()
+				#print(self.name, n.name, n.number_backward_sum_nexts_nodes, [m.compute_backward for m in n.nexts])
 				if n.checkBackwardDependences():
 					n.backpropagation()
 					# una vez realizado el backward se vuelven a reinicializar las estructuras
@@ -183,6 +194,14 @@ class Node(object):
 			# Solo se podra ejecutar si todas las dependencias han terminado de calcularse.
 			if n.checkComputeSizeDependences():
 				n.computeSize()
+
+	def hasToComputeBackward(self):
+		self.compute_backward = True
+		for n in self.prevs:
+			if not n.compute_backward and not isinstance(n.layer, Input):
+				n.hasToComputeBackward()
+
+
 
 	""" 
 		MISC

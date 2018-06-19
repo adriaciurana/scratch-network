@@ -13,7 +13,10 @@ ext_modules=[]
 for ext in glob.glob("*/cython/resources/*.pyx"):
 	filename = os.path.basename(ext)
 	dirname = os.path.dirname(ext)
-	name, _ = filename.split(".")
+	aux = filename.split(".")
+	if len(aux) > 2:
+		continue
+	name, _ = aux
 	name = os.path.dirname(dirname) + "/" + name
 	name = name.replace("/", ".")
 	print(name)
@@ -25,5 +28,6 @@ setup(
 	cmdclass = {'build_ext': build_ext},
 	ext_modules = ext_modules,
 	include_dirs=[numpy.get_include()],
-	extra_compile_args=['-o3', '-Wno-#warnings']
+	extra_compile_args=['-O3', '-march=native', '-ffast-math', '-fopenmp'],
+    extra_link_args=['-fopenmp']
 )

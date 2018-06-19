@@ -5,8 +5,13 @@ cimport numpy as np
 
 from numpy.math cimport INFINITY
 from types cimport FLOAT64, UINT
+from cython.parallel import prange,parallel
+cimport openmp
+from libc.stdlib cimport abort, malloc, free
 
 # max
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def nb_forward_max(np.ndarray[FLOAT64, ndim=4] inputv, tuple pool_size, tuple stride):
 	cdef unsigned int pool_size0 = pool_size[0], pool_size1 = pool_size[1], \
 	stride0 = stride[0], stride1 = stride[1], \
@@ -16,16 +21,16 @@ def nb_forward_max(np.ndarray[FLOAT64, ndim=4] inputv, tuple pool_size, tuple st
 	cdef unsigned int out_size0 = (inputv.shape[1] - pool_size0) / stride0 + 1, \
 	out_size1 = (inputv.shape[2] - pool_size1) / stride1 + 1
 
-	cdef np.ndarray[UINT, ndim=5] mask = np.zeros(shape=[batch_size, out_size0, out_size1, num_dim, 2], dtype=np.uint)
-	cdef np.ndarray[FLOAT64, ndim=4] out = np.zeros(shape=[batch_size, out_size0, out_size1, num_dim], dtype=np.float64)
+	cdef np.ndarray[UINT, ndim=5] mask = np.empty(shape=[batch_size, out_size0, out_size1, num_dim, 2], dtype=np.uint)
+	cdef np.ndarray[FLOAT64, ndim=4] out = np.empty(shape=[batch_size, out_size0, out_size1, num_dim], dtype=np.float64)
 
 	cdef unsigned int b, i, j, m, kw, kh, n
-	cdef unsigned int idx, iin, jin
+	cdef unsigned int iin, jin
 	cdef double blockInput
 	cdef double maxv
 	cdef long int maxi, maxj
 
-	for b in range(batch_size):
+	for b in prange(batch_size, nogil=True):
 		for i in range(out_size0):
 			for j in range(out_size1):
 				iin = i*stride0
@@ -48,6 +53,8 @@ def nb_forward_max(np.ndarray[FLOAT64, ndim=4] inputv, tuple pool_size, tuple st
 
 	return out, mask
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def nb_derivatives_max(np.ndarray[FLOAT64, ndim=4] doutput, tuple input_size, np.ndarray[UINT, ndim=5] mask, tuple stride):
 	cdef unsigned int out_size0 = doutput.shape[1], out_size1 = doutput.shape[2], \
 	stride0 = stride[0], stride1 = stride[1], \
@@ -71,10 +78,12 @@ def nb_derivatives_max(np.ndarray[FLOAT64, ndim=4] doutput, tuple input_size, np
 				for m in range(num_dim):
 					iin_kw = iin + mask[b, i, j, m, 0]
 					jin_kh = jin + mask[b, i, j, m, 1]
-					dx[b, iin_kw, jin_kh, m] += doutput[b, i, j, m]
+					dx[b, iin_kw, jin_kh, m] = doutput[b, i, j, m]
 	return dx
 
 # mean
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def nb_forward_mean(np.ndarray[FLOAT64, ndim=4] inputv, tuple pool_size, tuple stride):
 	cdef unsigned int pool_size0 = pool_size[0], pool_size1 = pool_size[1], \
 	stride0 = stride[0], stride1 = stride[1], \
@@ -84,37 +93,36 @@ def nb_forward_mean(np.ndarray[FLOAT64, ndim=4] inputv, tuple pool_size, tuple s
 	cdef unsigned int out_size0 = (inputv.shape[1] - pool_size0) / stride0 + 1, \
 	out_size1 = (inputv.shape[2] - pool_size1) / stride1 + 1
 
-	cdef np.ndarray[UINT, ndim=5] mask = np.zeros(shape=[batch_size, out_size0, out_size1, num_dim, 2], dtype=np.uint)
-	cdef np.ndarray[FLOAT64, ndim=4] out = np.zeros(shape=[batch_size, out_size0, out_size1, num_dim], dtype=np.float64)
+	cdef np.ndarray[FLOAT64, ndim=4] out = np.empty(shape=[batch_size, out_size0, out_size1, num_dim], dtype=np.float64)
 
 	cdef unsigned int b, i, j, m, kw, kh, n
 	cdef unsigned int idx, iin, jin
 	cdef double blockInput
-	cdef double mean
 	cdef double den = pool_size0*pool_size1
 
-	for b in range(batch_size):
+	for b in prange(batch_size, nogil=True):
 		for i in range(out_size0):
 			for j in range(out_size1):
 				iin = i*stride0
 				jin = j*stride1
 
 				for m in range(num_dim):
-					mean = 0.
+					out[b, i, j, m] = 0.
 					for kw in range(pool_size0):
 						for kh in range(pool_size1):
-							mean += inputv[b, iin + kw, jin + kh, m]
-					out[b, i, j, m] = mean / den
+							out[b, i, j, m] += inputv[b, iin + kw, jin + kh, m]
+					out[b, i, j, m] /= den
 
 	return out
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def nb_derivatives_mean(np.ndarray[FLOAT64, ndim=4] doutput, tuple input_size, tuple pool_size, tuple stride):
 	cdef unsigned int pool_size0 = pool_size[0], pool_size1 = pool_size[1], \
 	out_size0 = doutput.shape[1], out_size1 = doutput.shape[2], \
 	stride0 = stride[0], stride1 = stride[1], \
 	num_dim = doutput.shape[3], \
 	batch_size = doutput.shape[0]
-
 
 	cdef np.ndarray[FLOAT64, ndim=4] dx = np.zeros(shape=[batch_size, input_size[0], input_size[1], num_dim], dtype=np.float64)
 

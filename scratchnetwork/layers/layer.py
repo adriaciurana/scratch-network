@@ -8,6 +8,10 @@ class Layer(object):
 		self.node = node
 		# pesos de la capa
 		self.weights = Layer.Weights(func_repr_weights)
+		if weights_names is None:
+			self.iweights = 0.
+		else:
+			self.iweights = [0. for i in weights_names]
 		self.weights_names = weights_names
 		# valores intermedios de la capa
 		self.values = Layer.Values()
@@ -32,8 +36,8 @@ class Layer(object):
 		if 'compute_forward_in_prediction' in self.params:
 			self.node.compute_forward_in_prediction = self.params['compute_forward_in_prediction']
 
-		if 'compute_backward' in self.params:
-			self.node.compute_backward = self.params['compute_backward']
+		"""if 'compute_backward' in self.params:
+			self.node.compute_backward = self.params['compute_backward']"""
 
 		if 'number_of_inputs' in self.params:
 			if self.params['number_of_inputs'] < len(self.node.prevs):
@@ -102,7 +106,7 @@ class Layer(object):
 		weights_losses: Indica el peso de cada loss, por defecto este es 1/num_losses
 		name: indica el nombre del parametro a actualizar
 	"""
-	def correctWeight(self, name, dweight):
+	def correctWeight(self, name, dweight, iweight):
 		# primero obtenemos el peso a corregir
 		w = getattr(self.weights, name)
 		# aplicamos el funcional respecto al batch
@@ -112,7 +116,9 @@ class Layer(object):
 		dweight = dweight + self.getRegularization(name, w)
 
 		# realizamos la correccion con respecto al optimizador
-		setattr(self.weights, name, w + self.node.network.optimizer.step(dweight))
+		iweight = self.node.network.optimizer.step(dweight, iweight)
+		setattr(self.weights, name, w + iweight)
+		return iweight
 
 	def correctWeights(self, dweights):
 		#import time
@@ -120,9 +126,9 @@ class Layer(object):
 		if isinstance(dweights, (list, tuple)):
 			for i, dw in enumerate(dweights):
 				# aplicamos las correciones a los pesos
-				self.correctWeight(self.weights_names[i], dw)
+				self.iweights[i] = self.correctWeight(self.weights_names[i], dw, self.iweights[i])
 		else:
-			self.correctWeight(self.weights_names[0], dweights)
+			self.iweights = self.correctWeight(self.weights_names[0], dweights, self.iweights)
 		#print(time.time() - a0)
 
 	"""

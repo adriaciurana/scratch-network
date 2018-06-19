@@ -6,11 +6,13 @@ cimport numpy as np
 from types cimport FLOAT64
 
 # forward
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def nb_forward(np.ndarray[FLOAT64, ndim=3] inputv):
 	cdef unsigned int out_size0 = inputv.shape[1], out_size1 = inputv.shape[2], \
 	batch_size = inputv.shape[0]
 
-	cdef np.ndarray[FLOAT64, ndim=3] out = np.zeros(shape=[batch_size, out_size0, out_size1], dtype=np.float64)
+	cdef np.ndarray[FLOAT64, ndim=3] out = np.empty(shape=[batch_size, out_size0, out_size1], dtype=np.float64)
 
 	cdef unsigned int b, i, j
 	for b in range(batch_size):
@@ -24,11 +26,13 @@ def nb_forward(np.ndarray[FLOAT64, ndim=3] inputv):
 
 
 # derivatives
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def nb_derivatives(np.ndarray[FLOAT64, ndim=3] doutput, np.ndarray[FLOAT64, ndim=3] inputv):
 	cdef unsigned int out_size0 = inputv.shape[1], out_size1 = inputv.shape[2], \
 	batch_size = inputv.shape[0]
 
-	cdef np.ndarray[FLOAT64, ndim=3] dx = np.zeros(shape=[batch_size, out_size0, out_size1], dtype=np.float64)
+	cdef np.ndarray[FLOAT64, ndim=3] dx = np.empty(shape=[batch_size, out_size0, out_size1], dtype=np.float64)
 
 	cdef unsigned int b, i, j
 	for b in range(batch_size):

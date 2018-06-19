@@ -48,7 +48,7 @@ batch_index = 0
 net.compile(losses=[L1], metrics=[M1], optimizer=SGD(lr=0.1, clip=1))
 net.start(inputs=[inputX], outputs=[N3])
 
-for i in range(100000):
+for i in range(10000):
 	Xaux = a[batch_index:(batch_index + batch_size)]
 	Yaux = b[batch_index:(batch_index + batch_size)]
 	net.train_batch({'Input': Xaux}, {'Y': Yaux})

@@ -123,6 +123,10 @@ class Network(object):
 		# Compilamos las capas
 		for n in self.nodes.values():
 			n.compile()
+
+		for l in self.losses:
+			l.hasToComputeBackward()
+			
 		for n in self.nodes.values(): # se dene ejecutar una vez compilados
 			n.computeNumberOfBackwardNodes()
 
