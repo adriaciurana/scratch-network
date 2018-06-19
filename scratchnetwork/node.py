@@ -198,7 +198,7 @@ class Node(object):
 	def hasToComputeBackward(self):
 		self.compute_backward = True
 		for n in self.prevs:
-			if not n.compute_backward and not isinstance(n.layer, Input):
+			if not n.compute_backward and n.layer.compute_backward:
 				n.hasToComputeBackward()
 
 

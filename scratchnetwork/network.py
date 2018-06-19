@@ -205,7 +205,6 @@ class Network(object):
 		graph.set_node_defaults(shape='none', fontname='Courier', fontsize='10')
 		nodes = {}
 		for i, n in enumerate(self.nodes.values()):
-			#graph.add_node(pydot.Node(n.name, label='{'+n.name + " (" + type(n.layer).__name__ + ")\\n|- In: " + str(n.layer.in_size)+ "\\n|- Out: " + str(n.layer.out_size) + '}'))
 			nodes[n] = i
 			graph.add_node(pydot.Node(i, label=
 				u'<<table border="1" cellspacing="0"> \

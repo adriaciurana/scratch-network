@@ -1,7 +1,7 @@
-from .regularization import Regularization
+from .regularizatior import Regularizator
 import numpy as np
-class L1(Regularization):
-	def __init__(self, lambda_value):
+class L1(Regularizator):
+	def __init__(self, lambda_value=0.0005):
 		super(L1, self).__init__(lambda_value)
 	
 	def function(self, data):

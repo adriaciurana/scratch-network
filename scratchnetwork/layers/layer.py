@@ -21,6 +21,7 @@ class Layer(object):
 		# regularizacion
 		self.regularization = lambda weight: 0
 		self.is_trainable = True
+		self.compute_backward = True
 			
 
 
@@ -36,8 +37,8 @@ class Layer(object):
 		if 'compute_forward_in_prediction' in self.params:
 			self.node.compute_forward_in_prediction = self.params['compute_forward_in_prediction']
 
-		"""if 'compute_backward' in self.params:
-			self.node.compute_backward = self.params['compute_backward']"""
+		if 'compute_backward' in self.params:
+			self.compute_backward = self.params['compute_backward']
 
 		if 'number_of_inputs' in self.params:
 			if self.params['number_of_inputs'] < len(self.node.prevs):
