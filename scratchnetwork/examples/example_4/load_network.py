@@ -22,10 +22,11 @@ labels_test = np.array([[float(m == b) for m in range(10)] for b in labels_test]
 print(images_test.shape)
 
 net = Network()
+# DESCARGAR LOS PESOS EN: https://drive.google.com/file/d/1DeewIZLeeEUqVIsWrcPwc1Y3zr7eFUDA/view?usp=sharing
 net.load('example.h5')
 
 out = net.predict({'Input': images_test})
-"""import matplotlib.pylab as plt
+import matplotlib.pylab as plt
 from random import shuffle
 rrand = list(range(images_test.shape[0]))[:10]
 shuffle(rrand)
@@ -36,17 +37,14 @@ for i in rrand:
 	plt.title("number:"+str(o))
 	plt.imshow(images_test[i][:,:,0])
 	plt.colorbar()
-	plt.show()"""
+	plt.show()
 
 np.set_printoptions(threshold=np.nan)
 a = np.expand_dims(np.argmax(out['FC 2: Softmax'], axis=1), axis=-1)
 b = np.expand_dims(np.argmax(labels_test, axis=-1), axis=-1)
 eq = a == b
-accuracy_own = np.sum(eq)/eq.shape[0]
-
-#print(np.hstack((a, b)))
-from sklearn.metrics import confusion_matrix, accuracy_score
-print('accuracy: ' + accuracy_score(b, a))
-print('own accuracy: ' + accuracy_own)
+accuracy = np.sum(eq)/eq.shape[0]
+from sklearn.metrics import confusion_matrix
+print('accuracy: ' + str(accuracy))
 print('Confusion Matrix:')
 print(confusion_matrix(b, a))
