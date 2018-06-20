@@ -12,10 +12,12 @@ class Input(Layer):
 		self.data = None
 
 	def fill(self, data):
-		if data.shape[1:] != self.shape:
-			raise Exceptions.InputShapeException("Los datos en la capa "+self.__class__+": " + self.node.name + " tiene un tamaño incorrecto. \
+		if list(data.shape[1:]) != self.shape:
+			raise Exceptions.InputShapeException("Los datos en la capa "+self.__class__.__name__+": " + self.node.name + " tiene un tamaño incorrecto. \
 				Son "+str(data.shape[1:])+" y deberian ser " + str(self.shape) + ".")
 		self.data = data
+		#print(self.node.name)
+		
 		self.batch_size_input = self.data.shape[0]
 
 	def computeSize(self):
@@ -24,13 +26,15 @@ class Input(Layer):
 
 	def forward(self, inputs):	
 		if self.data is None:
-			raise Exceptions.InputNotFillException("La capa "+self.__class__+": " + self.node.name + " no ha sido llenada.")
+			raise Exceptions.InputNotFillException("La capa "+self.__class__.__name__+": " + self.node.name + " no ha sido llenada.")
 		aux = self.data
 		self.data = None
 		return aux
 
 	@property
 	def has_data(self):
+		#print(self.node.name)
+		
 		return self.data is not None
 
 	@property

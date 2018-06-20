@@ -1,5 +1,19 @@
+import hashlib
+import importlib
 import numpy as np
+
 class Misc:
+	@staticmethod
+	def check_hash(module, classname, hash):
+		return Misc.hash(module, classname) == hash
+	def hash(module, classname):
+		return hashlib.sha256((module + classname).encode('utf-8')).hexdigest()
+	@staticmethod
+	def import_class(module, classname):
+		module = importlib.import_module(module)
+		my_class = getattr(module, classname)
+		return my_class
+
 	@staticmethod
 	def add_pad(img, pad=(0,0)):
 		return np.pad(img, [(0,0), (pad[0], pad[0]), (pad[1], pad[1]), (0,0)], 'constant')

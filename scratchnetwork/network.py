@@ -85,7 +85,8 @@ class Network(object):
 	def testAllInputsHaveData(self, only_no_targets=False):
 		check = True
 		for n in self.nodes_with_only_outputs.values():
-			check &= (n.layer.has_data or (only_no_targets and not n.compute_forward_in_prediction))
+			check &= (not only_no_targets and n.layer.has_data) or (n.compute_forward_in_prediction and n.layer.has_data)
+			#(n.layer.has_data or (only_no_targets and not n.compute_forward_in_prediction))
 
 	def computeSizes(self):
 		for n in self.nodes.values():
@@ -245,34 +246,22 @@ class Network(object):
 		for i, n in enumerate(self.nodes.values()):
 			nodes_id_dict[i] = n
 			id_nodes_dict[n] = i
-			nodes_json[i] = n.save(i, nodes_h5.create_group(str(i)))
+			nodes_json[i] = n.save(nodes_h5.create_group(str(i)))
 
 		# RELATIONS
 		N = len(self.nodes)
-		relations_np = np.zeros(shape=[N, N], dtype=np.uint8)
+		relations_json = {}
 		for i, n in nodes_id_dict.items():
+			relations_json[i] = []
 			for nn in n.nexts:
 				j = id_nodes_dict[nn]
-				relations_np[i, j] = 1
-		hf.create_dataset("relations", data=relations_np)
+				relations_json[i].append(j)
 
 		# LOSSES
-		losses_np = np.zeros(shape=[len(self.losses), 2], dtype=np.float64)
-		weights_losses_np = np.zeros(shape=[len(self.losses)], dtype=np.float64)
-		for k, l in enumerate(self.losses):
-			i = id_nodes_dict[l]
-			losses_np[k] = i
-			weights_losses_np[k] = self.weights_losses[l.layer]
-
-		hf.create_dataset("losses", data=losses_np)
-		hf.create_dataset("weights_losses", data=weights_losses_np)
-
+		losses_json = dict([(id_nodes_dict[n], self.weights_losses[n.layer]) for n in self.losses])
+		
 		# METRICS
-		metrics_np = np.zeros(shape=[len(self.metrics)], dtype=np.int64)
-		for k, m in enumerate(self.metrics):
-			i = id_nodes_dict[m]
-			metrics_np[k] = i
-		hf.create_dataset("metrics", data=metrics_np)
+		metrics_json = [id_nodes_dict[n] for n in self.metrics]
 
 		# OPTIMIZER
 		optimizer_json = self.optimizer.save(hf.create_group("optimizer"))
@@ -282,7 +271,10 @@ class Network(object):
 		{'status': self.status,
 		'inputs': [id_nodes_dict[n] for n in self.inputs],
 		'outputs': [id_nodes_dict[n] for n in self.outputs],
+		'losses': losses_json,
+		'metrics': metrics_json,
 		'nodes': nodes_json,
+		'relations': relations_json,
 		'optimizer': optimizer_json}
 		
 		hf.create_dataset("data", data=json.dumps(network_json))
@@ -298,19 +290,17 @@ class Network(object):
 		id_nodes_dict = {}
 		self.nodes = {}
 		for i, n in data['nodes'].items():
-			idx = n['id']
-			del n['id']
-			node = Node.load_static(self, n, hf['nodes'][str(i)])
-			id_nodes_dict[idx] = node
+			node = Node.load_static(self, n, hf['nodes'][i])
+			id_nodes_dict[int(i)] = node
 			self.nodes[node.label] = node
 
 		# RELATIONS
-		relations_np = hf['relations'].value
-		for i in range(relations_np.shape[0]):
-			for j in range(relations_np.shape[1]):
-				if relations_np[i][j] == 1:
-					id_nodes_dict[i].addNext(id_nodes_dict[j])
+		for i in data['relations'].keys():
+			iint = int(i)
+			for j in data['relations'][i]:
+				id_nodes_dict[iint].addNext(id_nodes_dict[j])
 
+		# Realizamos parte de la compilacion, esta no sobreescribe elementos cargados.
 		for n in self.nodes.values():
 			# limpiamos las dependencias
 			n.clearForwardDependences()
@@ -325,11 +315,25 @@ class Network(object):
 		for n in self.nodes.values(): # se dene ejecutar una vez compilados
 			n.computeNumberOfBackwardNodes()
 
+		# IN & OUT
 		self.inputs = [id_nodes_dict[i] for i in data['inputs']]
 		self.outputs = [id_nodes_dict[i] for i in data['outputs']]
 
+		# LOSSES
+		self.losses = []
+		self.weights_losses = {}
+		for k, v in data['losses'].items():
+			n = id_nodes_dict[int(k)]
+			self.losses.append(n)
+			self.weights_losses[n.layer] = v
+
+		# METRICS
+		self.metrics = [id_nodes_dict[i] for i in data['metrics']]
+
+
 		# OPTIMIZER
 		self.optimizer = Optimizer.load_static(data['optimizer'], hf['optimizer'])
+
 		hf.close()
 
 

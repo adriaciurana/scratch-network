@@ -67,7 +67,7 @@ class Pooling2D(Layer):
 	def load(self, data, h5_container):
 		super(Pooling2D, self).load(data, h5_container)
 		self.type_pooling = data['attributes']['type_pooling']
-		self.pool_size = data['attributes']['pool_size']
-		self.stride = data['attributes']['stride']
+		self.pool_size = tuple(data['attributes']['pool_size'])
+		self.stride = tuple(data['attributes']['stride'])
 		self.padding = data['attributes']['padding']
-		self.padding_size = data['attributes']['padding_size']
+		self.padding_size = tuple(data['attributes']['padding_size'])

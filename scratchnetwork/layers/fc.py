@@ -33,8 +33,7 @@ class FC(Layer):
 		out = self.values.input.dot(self.weights.weights) + self.weights.bias
 		return out.reshape([-1] + list(self.out_size))
 
-	def derivatives(self, doutput):
-		
+	def derivatives(self, doutput):	
 		# BACKWARD
 		# como la capa envia distintas derivadas a cada entrada, esta debe separar los pesos
 		# Calculamos la backward con todos los pesos: (batch)x(neurons) [X] (neurons)x(I1 + I2 + ... In) = (batch)x(I1 + I2 + ... In)

@@ -270,12 +270,11 @@ class Node(object):
 	"""
 		Save
 	"""
-	def save(self, id_node, h5_container):
+	def save(self, h5_container):
 		layer_json = self.layer.save(h5_container.create_group("layer"))
 		
 		return \
-		{'id': id_node,
-		'label': self.label,
+		{'label': self.label,
 		'name': self.name,
 		'compute_forward_in_prediction': self.compute_forward_in_prediction,
 		'compute_backward': self.compute_backward,

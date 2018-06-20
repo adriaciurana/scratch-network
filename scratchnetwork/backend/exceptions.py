@@ -25,3 +25,5 @@ class Exceptions:
 		pass
 	class LayerHasNoFillMethod(Exception):
 		pass
+	class NotCompiledError(Exception):
+		pass

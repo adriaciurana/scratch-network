@@ -57,13 +57,6 @@ class Layer(object):
 			del self.params['regularizator']
 		
 	def forward(self, inputs):
-		"""global t
-		t1 = time.time()
-		print(self.node.name, t1 - t)
-		t = t1"""
-		"""print(self.node.name)
-		print(np.max(inputs[0]), np.min(inputs[0]))
-		print('----------------')"""
 		pass
 	
 	def derivatives(self, doutput=None):
@@ -184,6 +177,11 @@ class Layer(object):
 		layer_json['attributes']['is_trainable'] = self.is_trainable
 		layer_json['attributes']['compute_backward'] = self.compute_backward
 		layer_json['attributes']['params'] = self.params
+		layer_json['attributes']['sizes'] = {}
+		layer_json['attributes']['sizes']['in_size'] = self.in_size
+		layer_json['attributes']['sizes']['in_size_flatten'] = self.in_size_flatten
+		layer_json['attributes']['sizes']['out_size'] = self.out_size
+		layer_json['attributes']['sizes']['out_size_flatten'] = self.out_size_flatten
 		
 		return layer_json
 
@@ -209,5 +207,9 @@ class Layer(object):
 		obj.compute_backward = data['attributes']['compute_backward']
 		obj.params = data['attributes']['params']
 		obj.node = node
+		obj.in_size = data['attributes']['sizes']['in_size']
+		obj.in_size_flatten = data['attributes']['sizes']['in_size_flatten']
+		obj.out_size = data['attributes']['sizes']['out_size']
+		obj.out_size_flatten = data['attributes']['sizes']['out_size_flatten']
 		obj.load(data, h5_container)
 		return obj

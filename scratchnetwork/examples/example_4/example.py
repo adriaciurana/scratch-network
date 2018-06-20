@@ -18,7 +18,7 @@ from scratchnetwork.losses import SoftmaxCrossEntropy
 from scratchnetwork.metrics import Accuracy
 from scratchnetwork.optimizers import SGD
 from scratchnetwork.regularizators import L1 as LR1C
-LR1 = LR1C()
+LR1 = LR1C(0.0005)
 
 
 # MNIST LOAD
@@ -44,12 +44,12 @@ B1relu = net.Node("Block 1: ReLU", ReLU)
 B2 = net.Node("Block 2: Conv2D", Conv2D, num_filters=64, kernel_size=(3,3), params={'regularizator': LR1})
 B2relu = net.Node("Block 2: ReLU", ReLU)
 B2max = net.Node("Block 2: Maxpooling", Pooling2D, "max", pool_size=(2, 2))
-B2drop = net.Node("Block 2: Dropout", DropOut, 1)#0.25)
+B2drop = net.Node("Block 2: Dropout", DropOut, 0.25)
 B2flatten = net.Node("Block 2: Flatten", Flatten)
 
 FC1 = net.Node("FC 1: FC", FC, 128, params={'regularizator': LR1})
 FC1relu = net.Node("FC 1: ReLU", ReLU)
-FC1drop = net.Node("FC 1: Dropout", DropOut, 1)#0.5)
+FC1drop = net.Node("FC 1: Dropout", DropOut, 0.5)
 
 FC2 = net.Node("FC 2: FC ", FC, 10, params={'regularizator': LR1})
 FC2softmax = net.Node("FC 2: Softmax", Softmax)
@@ -93,16 +93,16 @@ L1.addPrev(inputY)
 M1.addPrev(FC2softmax)
 M1.addPrev(inputY)
 
-net.compile(losses=[L1], metrics=[M1], optimizer=SGD(lr=1e-2, clip=None))
+net.compile(losses=[L1], metrics=[M1], optimizer=SGD(lr=1e-1, clip=None))
 net.start(inputs=[inputX], outputs=[FC2softmax])
 net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
-
+"""
 # Llenamos
 batch_index = 0
-batch_size = 64
+batch_size = 128
 epoch = 0
 
-for i in range(1):
+for i in range(3000):
 	Xaux = images_train[batch_index:(batch_index + batch_size)]
 	Yaux = labels_train[batch_index:(batch_index + batch_size)]
 
@@ -114,8 +114,10 @@ for i in range(1):
 		epoch += 1
 	
 	net.monitoring()
+	print(str(batch_index) + "/" + str(epoch))
+	print('-----'+ str(time.time() - t) +'------')"""
 
 
-print(net.save("example.h5"))
-out = net.predict({'Input': a})
-print(np.hstack((out['FC 2: Softmax'], b)))
+print(net.save("example_1e_1.h5"))
+#out = net.predict({'Input': a})
+#print(np.hstack((out['FC 2: Softmax'], b)))

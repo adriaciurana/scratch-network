@@ -1,7 +1,7 @@
 from .optimizer import Optimizer
 import numpy as np
 class SGD(Optimizer):
-	def __init__(self, lr=1e-1, mu=0.9, clip=1):
+	def __init__(self, lr=1e-5, mu=0.9, clip=1):
 		self.lr = lr
 		self.mu = mu
 		self.clip = clip
@@ -17,12 +17,11 @@ class SGD(Optimizer):
 			coef = self.clip/max(dweight_norm, self.clip)
 
 		try:
-			iweight_1 = self.iweights[weight_name]
+			iweight = self.iweights[weight_name]
 		except:
-			iweight_1 = 0
-		aux = - self.lr*dweight*coef + self.mu*iweight_1
-		self.iweights[weight_name] = aux
-		return aux
+			iweight = 0 
+		self.iweights[weight_name] = - self.lr*dweight*coef + self.mu*iweight
+		return self.iweights[weight_name]
 
 	def save(self, h5_container):
 		layer_json = super(SGD, self).save(h5_container)

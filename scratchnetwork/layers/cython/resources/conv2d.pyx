@@ -64,7 +64,7 @@ def nb_derivatives(np.ndarray[FLOAT64, ndim=4] doutput, np.ndarray[FLOAT64, ndim
 	cdef unsigned int iin_kw, jin_kh
 	cdef double doutput_ptr
 
-	for b in prange(batch_size, nogil=True):
+	for b in range(batch_size):
 		for i in range(out_size0):
 			for j in range(out_size1):
 				iin = i*stride0

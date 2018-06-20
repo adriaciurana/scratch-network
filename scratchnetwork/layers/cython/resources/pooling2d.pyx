@@ -126,7 +126,7 @@ def nb_derivatives_mean(np.ndarray[FLOAT64, ndim=4] doutput, tuple input_size, t
 
 	cdef np.ndarray[FLOAT64, ndim=4] dx = np.zeros(shape=[batch_size, input_size[0], input_size[1], num_dim], dtype=np.float64)
 
-	cdef unsigned int b, i, j, m, n
+	cdef unsigned int b, i, j, m, kw, kh, n
 	cdef unsigned int idx, iin, jin
 	cdef double blockInput
 	cdef unsigned int iin_kw, jin_kh
