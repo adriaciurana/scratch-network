@@ -16,4 +16,4 @@ class Flatten(Layer):
 		return inputs[0].reshape([-1, self.in_size_flatten[0]])
 
 	def derivatives(self, doutput):
-		return doutput.reshape([-1] + list(self.in_size[0]))
+		return doutput.reshape([-1] + self.in_size[0])

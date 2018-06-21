@@ -12,11 +12,10 @@ class Input(Layer):
 		self.data = None
 
 	def fill(self, data):
-		if list(data.shape[1:]) != self.shape:
+		if data.shape[1:] != self.shape:
 			raise Exceptions.InputShapeException("Los datos en la capa "+self.__class__.__name__+": " + self.node.name + " tiene un tamaño incorrecto. \
 				Son "+str(data.shape[1:])+" y deberian ser " + str(self.shape) + ".")
 		self.data = data
-		#print(self.node.name)
 		
 		self.batch_size_input = self.data.shape[0]
 
@@ -48,4 +47,4 @@ class Input(Layer):
 		
 	def load(self, data, h5_container):
 		super(Input, self).load(data, h5_container)
-		self.shape = data['attributes']['shape']
+		self.shape = tuple(data['attributes']['shape'])

@@ -41,7 +41,7 @@ class Conv2D(Layer):
 			self.num_dim = 1
 		else:
 			self.num_dim = self.in_size[0][2]
-		self.weights.kernels = self.initializer['weights'].get(shape=(self.num_dim, self.kernel_size[0], self.kernel_size[1], self.num_filters))/(self.kernel_size[0] * self.kernel_size[1] * self.num_dim)
+		self.weights.kernels = self.initializer['weights'].get(shape=(self.num_dim, self.kernel_size[0], self.kernel_size[1], self.num_filters))
 		self.weights.bias = self.initializer['bias'].get(shape=[self.num_filters])
 
 	def forward(self, inputs):

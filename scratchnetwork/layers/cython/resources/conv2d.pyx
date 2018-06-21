@@ -35,12 +35,11 @@ def nb_forward(np.ndarray[FLOAT64, ndim=4] inputv, np.ndarray[FLOAT64, ndim=4] k
 				jin = j*stride1
 
 				for n in range(num_filters):
-					out[b, i, j, n] = 0.
+					out[b, i, j, n] = bias[n]
 					for kw in range(kernel_size0):
 						for kh in range(kernel_size1):
 							for m in range(num_dim):
 								out[b, i, j, n] += inputv[b, iin + kw, jin + kh, m] * kernels[m, kw, kh, n]
-					out[b, i, j, n] += bias[n]
 	return out
 
 
@@ -64,7 +63,7 @@ def nb_derivatives(np.ndarray[FLOAT64, ndim=4] doutput, np.ndarray[FLOAT64, ndim
 	cdef unsigned int iin_kw, jin_kh
 	cdef double doutput_ptr
 
-	for b in range(batch_size):
+	for b in prange(batch_size, nogil=True):
 		for i in range(out_size0):
 			for j in range(out_size1):
 				iin = i*stride0
@@ -85,3 +84,12 @@ def nb_derivatives(np.ndarray[FLOAT64, ndim=4] doutput, np.ndarray[FLOAT64, ndim
 								dw[m, kw, kh, n] += inputv[b, iin_kw, jin_kh, m]*doutput_ptr
 								dx[b, iin_kw, jin_kh, m] += kernels[m, kw, kh, n]*doutput_ptr
 	return dx, dw, db
+
+
+"""
+for thread_id in prange(batch_size*out_size0*out_size1, nogil=True, schedule='static'):
+		j = thread_id % out_size1
+		i = (thread_id / out_size1) % out_size0
+		b = ((thread_id / out_size1) / out_size0) % batch_size
+		
+"""

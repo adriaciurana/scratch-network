@@ -23,7 +23,7 @@ class FC(Layer):
 	def compile(self):
 		super(FC, self).compile()
 		
-		self.weights.weights = self.initializer['weights'].get(shape=(sum(self.in_size_flatten), self.neurons))/sum(self.in_size_flatten) #np.random.rand(sum(self.in_size_flatten), self.neurons)
+		self.weights.weights = self.initializer['weights'].get(shape=(sum(self.in_size_flatten), self.neurons)) #np.random.rand(sum(self.in_size_flatten), self.neurons)
 		self.weights.bias = self.initializer['bias'].get(shape=[self.neurons]) #np.random.rand(1, self.neurons)
 
 	def forward(self, inputs):
@@ -31,7 +31,7 @@ class FC(Layer):
 			
 		self.values.input = inputs[0]
 		out = self.values.input.dot(self.weights.weights) + self.weights.bias
-		return out.reshape([-1] + list(self.out_size))
+		return out.reshape([-1] + self.out_size)
 
 	def derivatives(self, doutput):	
 		# BACKWARD

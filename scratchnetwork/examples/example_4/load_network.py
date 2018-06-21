@@ -18,7 +18,7 @@ images_test, labels_test = np.reshape(np.array(images_test), [-1, 28, 28]), np.a
 #images_train = (np.array(np.expand_dims(images_train, axis=-1), dtype=np.float64) - 128)/128
 #labels_train = np.array([[float(m == b) for m in range(10)] for b in labels_train], dtype=np.float64)
 images_test = ((np.array(np.expand_dims(images_test, axis=-1), dtype=np.float64) - 128)/128)
-labels_test = np.array([[float(m == b) for m in range(10)] for b in labels_test], dtype=np.float64)
+labels_test = np.array(labels_test, dtype=np.int32).reshape(-1, 1)
 print(images_test.shape)
 
 net = Network()
@@ -45,20 +45,20 @@ from random import shuffle
 rrand = list(range(images_test.shape[0]))[:10]
 shuffle(rrand)
 for i in rrand:
-	o = out['FC 2: Softmax'][i]
-	o = np.argmax(o)
+	o = out['Output'][i, 0]
+
 	# plot
-	plt.title("number:"+str(o))
+	plt.title("number: "+str(o))
 	plt.imshow(images_test[i][:,:,0])
 	plt.colorbar()
 	plt.show()
 
 np.set_printoptions(threshold=np.nan)
-a = np.expand_dims(np.argmax(out['FC 2: Softmax'], axis=1), axis=-1)
-b = np.expand_dims(np.argmax(labels_test, axis=-1), axis=-1)
+a = out['Output']
+b = labels_test
 eq = a == b
 accuracy = np.sum(eq)/eq.shape[0]
 from sklearn.metrics import confusion_matrix
-print('accuracy: ' + str(accuracy))
+print('Accuracy: ' + str(accuracy))
 print('Confusion Matrix:')
 print(confusion_matrix(b, a))

@@ -18,6 +18,7 @@ from scratchnetwork.losses import SoftmaxCrossEntropy
 from scratchnetwork.metrics import Accuracy
 from scratchnetwork.optimizers import SGD
 from scratchnetwork.regularizators import L1 as LR1C
+from scratchnetwork.layers import OneHotDecode
 LR1 = LR1C(0.0005)
 
 
@@ -26,17 +27,15 @@ from mnist import MNIST
 mndata = MNIST('dataset/data')
 images_train, labels_train = mndata.load_training()
 images_train, labels_train = np.reshape(np.array(images_train), [-1, 28, 28]), np.array(labels_train)
-#images_test, labels_test = mndata.load_testing()
-#images_test, labels_test = np.reshape(np.array(images_test), [-1, 28, 28]), np.array(labels_test)
 
 images_train = (np.array(np.expand_dims(images_train, axis=-1), dtype=np.float64) - 128)/128
-labels_train = np.array([[float(m == b) for m in range(10)] for b in labels_train], dtype=np.float64)
-#images_test = np.expand_dims(images_test, axis=-1)
+labels_train = np.array(labels_train, dtype=np.int32).reshape(-1, 1)
+#labels_train = np.array([[float(m == b) for m in range(10)] for b in labels_train], dtype=np.float64)
 
 # Network
 net = Network()
 inputX = net.Node("Input", Input, [28, 28, 1])
-inputY = net.Node("Label", Input, [10])
+inputY = net.Node("Label", Input, [1])
 
 B1 = net.Node("Block 1: Conv2D", Conv2D, num_filters=32, kernel_size=(3,3), params={'regularizator': LR1})
 B1relu = net.Node("Block 1: ReLU", ReLU)
@@ -53,11 +52,8 @@ FC1drop = net.Node("FC 1: Dropout", DropOut, 0.5)
 
 FC2 = net.Node("FC 2: FC ", FC, 10, params={'regularizator': LR1})
 FC2softmax = net.Node("FC 2: Softmax", Softmax)
-"""
-FC2softmax = net.Node("FC 2: Softmax", Softmax)
+output = net.Node("Output", OneHotDecode)
 
-L1 = net.Node("Cross Entropy", CrossEntropy)
-"""
 L1 = net.Node("Cross Entropy", SoftmaxCrossEntropy)
 M1 = net.Node("Accuracy", Accuracy)
 
@@ -77,6 +73,7 @@ FC1relu.addNext(FC1drop)
 FC1drop.addNext(FC2)
 
 FC2.addNext(FC2softmax)
+FC2softmax.addNext(output)
 
 """FC2.addNext(FC2softmax)
 
@@ -90,13 +87,13 @@ M1.addPrev(inputY)
 L1.addPrev(FC2)
 L1.addPrev(inputY)
 
-M1.addPrev(FC2softmax)
+M1.addPrev(output)
 M1.addPrev(inputY)
 
-net.compile(losses=[L1], metrics=[M1], optimizer=SGD(lr=1e-1, clip=None))
-net.start(inputs=[inputX], outputs=[FC2softmax])
+net.compile(losses=[L1], metrics=[M1], optimizer=SGD(lr=1e-2, clip=None))
+net.start(inputs=[inputX], outputs=[output])
 net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
-"""
+
 # Llenamos
 batch_index = 0
 batch_size = 128
@@ -115,9 +112,7 @@ for i in range(3000):
 	
 	net.monitoring()
 	print(str(batch_index) + "/" + str(epoch))
-	print('-----'+ str(time.time() - t) +'------')"""
+	print('-----'+ str(time.time() - t) +'------')
 
 
-print(net.save("example_1e_1.h5"))
-#out = net.predict({'Input': a})
-#print(np.hstack((out['FC 2: Softmax'], b)))
+print(net.save("example.h5"))

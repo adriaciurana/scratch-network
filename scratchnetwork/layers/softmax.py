@@ -15,17 +15,7 @@ class Softmax(Layer):
 
 	def forward(self, inputs):
 		super(Softmax, self).forward(inputs)
-
-		"""z = inputs[0]
-		assert len(z.shape) == 2
-		s = np.max(z, axis=1)
-		s = s[:, np.newaxis] # necessary step to do broadcasting
-		e_x = np.exp(z - s)
-		div = np.sum(e_x, axis=1)
-		div = div[:, np.newaxis] # dito
-		self.values.input = e_x
-		self.values.sum = div
-		return e_x / div"""
+		
 		self.values.out = softmax.nb_forward(inputs[0])
 		return self.values.out
 		

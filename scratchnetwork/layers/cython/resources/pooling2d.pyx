@@ -69,7 +69,7 @@ def nb_derivatives_max(np.ndarray[FLOAT64, ndim=4] doutput, tuple input_size, np
 	cdef double blockInput
 	cdef unsigned int iin_kw, jin_kh
 
-	for b in range(batch_size):
+	for b in prange(batch_size, nogil=True):
 		for i in range(out_size0):
 			for j in range(out_size1):
 				iin = i*stride0
@@ -134,8 +134,7 @@ def nb_derivatives_mean(np.ndarray[FLOAT64, ndim=4] doutput, tuple input_size, t
 	cdef double den = pool_size0*pool_size1
 	cdef double dx_p
 
-
-	for b in range(batch_size):
+	for b in prange(batch_size, nogil=True):
 		for i in range(out_size0):
 			for j in range(out_size1):
 				iin = i*stride0

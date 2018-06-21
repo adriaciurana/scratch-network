@@ -145,7 +145,7 @@ class Node(object):
 		
 		# si es una loss multiplicamos el peso asociado
 		if is_loss:
-			backward *= self.network.weights_losses[self.layer]
+			backward *= self.layer.weight
 
 		# propagamos hacia atras
 		for i, n in enumerate(self.prevs):

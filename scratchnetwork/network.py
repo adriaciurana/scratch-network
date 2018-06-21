@@ -32,11 +32,12 @@ class Network(object):
 		
 		# optimizador
 		self.optimizer = None
-		self.losses = None
-		self.weights_losses = None
-		self.metrics = None
 
-		self.batch_size = None
+		# losses y sus corresponientes pesos
+		self.losses = []
+		self.metrics = []
+
+		self.batch_size = 0
 
 	def Node(self, name, layer, *layer_args, **layer_kargs):
 		node = Node(self, name, layer, layer_args, layer_kargs)
@@ -96,7 +97,6 @@ class Network(object):
 			n.computeSize()
 
 	def compile(self, losses, metrics = [], optimizer=SGD()):
-		self.losses = losses
 		self.metrics = metrics
 		self.optimizer = optimizer
 		for n in self.nodes.values():
@@ -139,14 +139,14 @@ class Network(object):
 		# si la entrada ha sido una lista los pesos de cada loss son equiprobables.
 		if isinstance(self.losses, list):
 			v = 1./len(self.losses)
-			self.weights_losses = {}
 			for l in self.losses:
-				self.weights_losses[l.layer] = v
+				l.layer.weight = v
 
 		# si en cambio se ha introducido un diccionario del tipo {Loss1: 0.5, Loss2: 0.3, Loss3: 0.2}
-		elif isinstance(self.losses, dict):
-			self.weights_losses = self.losses
-			self.losses = self.losses.keys()
+		elif isinstance(losses, dict):
+			for k, v in losses.items():
+				k.layer.weight = v
+			self.losses = list(losses.keys())
 
 		# cambiamos estado
 		self.status = Network.STATUS.COMPILED
@@ -258,7 +258,7 @@ class Network(object):
 				relations_json[i].append(j)
 
 		# LOSSES
-		losses_json = dict([(id_nodes_dict[n], self.weights_losses[n.layer]) for n in self.losses])
+		losses_json = [id_nodes_dict[n] for n in self.losses]
 		
 		# METRICS
 		metrics_json = [id_nodes_dict[n] for n in self.metrics]
@@ -320,12 +320,7 @@ class Network(object):
 		self.outputs = [id_nodes_dict[i] for i in data['outputs']]
 
 		# LOSSES
-		self.losses = []
-		self.weights_losses = {}
-		for k, v in data['losses'].items():
-			n = id_nodes_dict[int(k)]
-			self.losses.append(n)
-			self.weights_losses[n.layer] = v
+		self.losses = [id_nodes_dict[i] for i in data['losses']]
 
 		# METRICS
 		self.metrics = [id_nodes_dict[i] for i in data['metrics']]
