@@ -98,6 +98,19 @@ class Network(object):
 
 	def compile(self, losses, metrics = [], optimizer=SGD()):
 		self.metrics = metrics
+		# Calculamos los pesos de las losses
+		# si la entrada ha sido una lista los pesos de cada loss son equiprobables.
+		if isinstance(losses, list):
+			v = 1./len(losses)
+			for l in losses:
+				l.layer.weight = v
+			self.losses = losses
+
+		# si en cambio se ha introducido un diccionario del tipo {Loss1: 0.5, Loss2: 0.3, Loss3: 0.2}
+		elif isinstance(losses, dict):
+			for k, v in losses.items():
+				k.layer.weight = v
+			self.losses = list(losses.keys())
 		self.optimizer = optimizer
 		for n in self.nodes.values():
 			# limpiamos las dependencias
@@ -134,19 +147,6 @@ class Network(object):
 			
 		for n in self.nodes.values(): # se dene ejecutar una vez compilados
 			n.computeNumberOfBackwardNodes()
-
-		# Calculamos los pesos de las losses
-		# si la entrada ha sido una lista los pesos de cada loss son equiprobables.
-		if isinstance(self.losses, list):
-			v = 1./len(self.losses)
-			for l in self.losses:
-				l.layer.weight = v
-
-		# si en cambio se ha introducido un diccionario del tipo {Loss1: 0.5, Loss2: 0.3, Loss3: 0.2}
-		elif isinstance(losses, dict):
-			for k, v in losses.items():
-				k.layer.weight = v
-			self.losses = list(losses.keys())
 
 		# cambiamos estado
 		self.status = Network.STATUS.COMPILED

@@ -1,7 +1,6 @@
 from .layer import Layer
 from ..backend.initializer import Initializer
 import numpy as np
-from .cython import fc
 import threading
 class FC(Layer):
 	def __init__(self, node, neurons, initializer={'weights': Initializer("normal"), 'bias': Initializer("normal")}, params=None):
@@ -23,7 +22,7 @@ class FC(Layer):
 	def compile(self):
 		super(FC, self).compile()
 		
-		self.weights.weights = self.initializer['weights'].get(shape=(sum(self.in_size_flatten), self.neurons)) #np.random.rand(sum(self.in_size_flatten), self.neurons)
+		self.weights.weights = self.initializer['weights'].get(shape=(sum(self.in_size_flatten), self.neurons)) / sum(self.in_size_flatten) #np.random.rand(sum(self.in_size_flatten), self.neurons)
 		self.weights.bias = self.initializer['bias'].get(shape=[self.neurons]) #np.random.rand(1, self.neurons)
 
 	def forward(self, inputs):

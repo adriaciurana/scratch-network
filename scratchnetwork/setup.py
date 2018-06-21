@@ -20,14 +20,16 @@ for ext in glob.glob("*/cython/resources/*.pyx"):
 	name = os.path.dirname(dirname) + "/" + name
 	name = name.replace("/", ".")
 	print(name)
-	print(ext)
-	ext_modules.append(Extension(name, [ext]))
+	ext_modules.append(Extension(name, 
+		sources=[ext],
+		extra_compile_args = ["-I/usr/local/opt/llvm/include", "-L/usr/local/opt/llvm/lib", "-O3", "-ffast-math", "-march=native", '-static'], #-fopenmp=libomp
+		#extra_link_args
+    ))
 
 setup(
 	name = 'cython_resources',
 	cmdclass = {'build_ext': build_ext},
 	ext_modules = ext_modules,
 	include_dirs=[numpy.get_include()],
-	extra_compile_args=['-O3', '-march=native', '-ffast-math', '-fopenmp'],
-    extra_link_args=['-fopenmp']
 )
+#export CC=/usr/local/opt/llvm/bin/clang
