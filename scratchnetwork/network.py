@@ -8,6 +8,7 @@ from .layers.layer import Layer
 from .optimizers import SGD
 from .optimizers.optimizer import Optimizer
 from .backend.exceptions import Exceptions
+from .utils.pipeline import Pipeline
 
 class Network(object):
 	# Posibles estados de la red
@@ -40,9 +41,14 @@ class Network(object):
 		self.batch_size = 0
 
 	def Node(self, name, layer, *layer_args, **layer_kargs):
-		node = Node(self, name, layer, layer_args, layer_kargs)
-		self.nodes[node.label] = node
+		if isinstance(layer, Pipeline):
+			for node in layer.get(*layer_args, **layer_kargs):
+				self.nodes[node.label] = node
 		
+		else:
+			node = Node(self, name, layer, layer_args, layer_kargs)
+			self.nodes[node.label] = node
+
 		return node
 
 	"""
@@ -249,7 +255,6 @@ class Network(object):
 			nodes_json[i] = n.save(nodes_h5.create_group(str(i)))
 
 		# RELATIONS
-		N = len(self.nodes)
 		relations_json = {}
 		for i, n in nodes_id_dict.items():
 			relations_json[i] = []

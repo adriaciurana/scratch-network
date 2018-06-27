@@ -12,7 +12,19 @@ class Node(object):
 		self.temp_backward_dependences = 0
 		
 		self.network = network
-		if isinstance(name, (list, tuple)):
+
+
+		if issubclass(layer, Layer):
+			layer_args = tuple([self] + list(layer_args))
+			self.layer = layer(*layer_args, **layer_kargs)
+		else:
+			raise Exceptions.NotFoundLayer("La capa que has introducido no existe.")
+
+		if name is None:
+			self.name = self.layer.__class__.__name__ + '_' + self.layer.LAYER_COUNTER
+			self.label = self.name
+		
+		elif isinstance(name, (list, tuple)):
 			self.name = name[1]
 			self.label = name[0]
 		else:
@@ -26,12 +38,6 @@ class Node(object):
 		self.compute_backward = False
 		# indicamos si produce o no dependencia tanto en el forward como el backward, las metricas no bloquean las dependencias ya que no participan en el juego solo evaluan.
 		
-		if issubclass(layer, Layer):
-			layer_args = tuple([self] + list(layer_args))
-			self.layer = layer(*layer_args, **layer_kargs)
-		else:
-			raise Exceptions.NotFoundLayer("La capa que has introducido no existe.")
-
 		# relaciones que tiene el nodo
 		self.prevs = []
 		self.nexts = []
@@ -44,12 +50,12 @@ class Node(object):
 		RELATIONS
 	"""
 	def addNext(self, node):
-		self.nexts.append(node)
+		self.nexts.append(node.start)
 		node.prevs.append(self)
 
 
 	def addPrev(self, node):
-		self.prevs.append(node)
+		self.prevs.append(node.end)
 		node.nexts.append(self)
 
 	def __call_(self, node):
@@ -243,22 +249,29 @@ class Node(object):
 	def batchSize(self):
 		return self.layer.batch_size
 
-	def copy(self, copy_layer=False, name_prepend=''):
+	def copy(self, copy_layer=False, name_prepend=None):
 		c = self.__class__
 		copy_node_instance = c.__new__(c)
 
 		copy_node_instance.network = self.network
-		copy_node_instance.name = name_prepend + self.name
-		copy_node_instance.label = name_prepend + self.label
-		copy_node_instance.temp_forward_dependences = 0
-		copy_node_instance.temp_backward_dependences = 0
-		copy_node_instance.compute_forward_in_prediction = self.compute_forward_in_prediction
-		copy_node_instance.compute_backward = self.compute_backward
-		
+
 		if copy_layer:
 			copy_node_instance.layer = self.layer.copy(copy_node_instance)
 		else:
 			copy_node_instance.layer = self.layer 
+		
+		if isinstance(name_prepend, str):
+			copy_node_instance.name = name_prepend + self.name
+			copy_node_instance.label = name_prepend + self.label
+
+		else:
+			copy_node_instance.name = self.name+'_'+copy_node_instance.layer.LAYER_COUNTER
+			copy_node_instance.label = name_prepend + self.label+'_'+copy_node_instance.layer.LAYER_COUNTER
+
+		copy_node_instance.temp_forward_dependences = 0
+		copy_node_instance.temp_backward_dependences = 0
+		copy_node_instance.compute_forward_in_prediction = self.compute_forward_in_prediction
+		copy_node_instance.compute_backward = self.compute_backward
 		
 		return copy_node_instance
 
@@ -266,6 +279,14 @@ class Node(object):
 	@property
 	def weights(self):
 		return self.layer.weights
+
+	@property
+	def end(self):
+		return self
+
+	@property
+	def start(self):
+		return self
 
 	"""
 		Save

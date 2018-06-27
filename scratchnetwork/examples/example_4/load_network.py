@@ -17,8 +17,8 @@ images_test, labels_test = np.reshape(np.array(images_test), [-1, 28, 28]), np.a
 
 #images_train = (np.array(np.expand_dims(images_train, axis=-1), dtype=np.float64) - 128)/128
 #labels_train = np.array([[float(m == b) for m in range(10)] for b in labels_train], dtype=np.float64)
-images_test = ((np.array(np.expand_dims(images_test, axis=-1), dtype=np.float64) - 128)/128)
-labels_test = np.array(labels_test, dtype=np.int32).reshape(-1, 1)
+images_test = ((np.array(np.expand_dims(images_test, axis=-1), dtype=np.float64) - 128)/128)[:10]
+labels_test = np.array(labels_test, dtype=np.int32).reshape(-1, 1)[:10]
 print(images_test.shape)
 
 net = Network()

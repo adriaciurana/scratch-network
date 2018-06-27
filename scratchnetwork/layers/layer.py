@@ -8,7 +8,10 @@ from ..regularizators.regularizator import Regularizator
 #import time
 #t = time.time()
 class Layer(object):
+	LAYER_COUNTER = 0
+
 	def __init__(self, node, weights_names=None, func_repr_weights=lambda x: x, params=None):
+		self.LAYER_COUNTER += 1
 		if params is None:
 			params = {}
 

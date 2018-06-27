@@ -99,7 +99,7 @@ batch_index = 0
 batch_size = 128
 epoch = 0
 
-for i in range(3000):
+for i in range(3):
 	Xaux = images_train[batch_index:(batch_index + batch_size)]
 	Yaux = labels_train[batch_index:(batch_index + batch_size)]
 
@@ -115,4 +115,4 @@ for i in range(3000):
 	print('-----'+ str(time.time() - t) +'------')
 
 
-print(net.save("example.h5"))
+#print(net.save("example.h5"))
