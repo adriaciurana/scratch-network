@@ -44,12 +44,12 @@ class Network(object):
 		if isinstance(layer, Pipeline):
 			for node in layer.get(*layer_args, **layer_kargs):
 				self.nodes[node.label] = node
+			return layer
 		
 		else:
 			node = Node(self, name, layer, layer_args, layer_kargs)
 			self.nodes[node.label] = node
-
-		return node
+			return node
 
 	"""
 		COMPILE:

@@ -69,6 +69,8 @@ class Node(object):
 			for n in vargs:
 				self.addPrev(n)
 
+		return self
+
 
 
 	# Las variables que empiezan por temp, son temporales y son las que se usan en el flujo del programa.
