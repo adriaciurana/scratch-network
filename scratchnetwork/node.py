@@ -58,12 +58,17 @@ class Node(object):
 		self.prevs.append(node.end)
 		node.nexts.append(self)
 
-	def __call_(self, node):
-		if isinstance(node, (list, tuple)):
-			for n in node:
-				self.addPrev(n)
+	def __call__(self, *vargs):
+		if len(vargs) == 1:
+			if isinstance(vargs[0], (list, tuple)):
+				for n in vargs[0]:
+					self.addPrev(n)
+			else:
+				self.addPrev(vargs[0])
 		else:
-			self.addPrev(node)
+			for n in vargs:
+				self.addPrev(n)
+
 
 
 	# Las variables que empiezan por temp, son temporales y son las que se usan en el flujo del programa.
