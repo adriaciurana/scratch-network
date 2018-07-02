@@ -6,10 +6,10 @@ class FC(Layer):
 	def __init__(self, node, neurons, initializer={'weights': Initializer("normal"), 'bias': Initializer("normal")}, params=None):
 		if params is None:
 			params = {}
-
+		if 'weights_names' not in params:
+			params['weights_names'] = ('weights', 'bias')
 		params['number_of_inputs'] = 1
-		params['avoid_to_save'] = ['initializer']
-		super(FC, self).__init__(node, weights_names=('weights', 'bias'), params=params)
+		super(FC, self).__init__(node, params=params)
 		
 		self.initializer = initializer
 		self.neurons = neurons

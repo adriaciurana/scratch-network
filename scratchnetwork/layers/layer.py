@@ -10,7 +10,7 @@ from ..regularizators.regularizator import Regularizator
 class Layer(object):
 	LAYER_COUNTER = 0
 
-	def __init__(self, node, weights_names=None, func_repr_weights=lambda x: x, params=None):
+	def __init__(self, node, func_repr_weights=lambda x: x, params=None):
 		self.LAYER_COUNTER += 1
 		if params is None:
 			params = {}
@@ -18,7 +18,11 @@ class Layer(object):
 		self.node = node
 		# pesos de la capa
 		self.weights = Layer.Weights(func_repr_weights)
-		self.weights_names = weights_names
+		if 'weights_names' in params:
+			self.weights_names = params['weights_names']
+			del params['weights_names']
+		else:
+			self.weights_names = None
 		# valores intermedios de la capa
 		self.values = Layer.Values()
 		# parametros de la capa
