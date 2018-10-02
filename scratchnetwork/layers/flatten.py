@@ -9,7 +9,7 @@ class Flatten(Layer):
 	
 	def computeSize(self):
 		super(Flatten, self).computeSize()
-		return tuple(self.in_size[0])
+		return (self.in_size_flatten[0], )
 
 	def forward(self, inputs):
 		super(Flatten, self).forward(inputs)

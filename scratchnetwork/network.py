@@ -41,10 +41,9 @@ class Network(object):
 		self.batch_size = 0
 
 	def Node(self, name, layer, *layer_args, **layer_kargs):
-		if isinstance(layer, Pipeline):
-			for node in layer.get(*layer_args, **layer_kargs):
-				self.nodes[node.label] = node
-			return layer
+		if layer is Pipeline:
+			node = layer(self, name, layer_kargs['creator'] if 'creator' in layer_kargs else layer_args[0])
+			return node
 		
 		else:
 			node = Node(self, name, layer, layer_args, layer_kargs)
@@ -219,16 +218,29 @@ class Network(object):
 		print('Metrics:', dict([(m.name, m.temp_forward_result) for m in self.metrics]))
 
 	def plot(self, filestr):
+		if self.status != Network.STATUS.COMPILED:
+			print('Para realizar un grafico, debe compilar la red.')
+			return
+
 		graph = pydot.Dot(graph_type='digraph')
 		graph.set_node_defaults(shape='none', fontname='Courier', fontsize='10')
 		nodes = {}
 		for i, n in enumerate(self.nodes.values()):
+			reuse_html = ''
+			if 'reuse' in n.__dict__:
+				if n.reuse:
+					s = n.pipeline_name + ': shared parameters '
+				else:
+					s = n.pipeline_name + ': not shared parameters'
+				reuse_html = '<tr><td border="1" sides="T" style="dashed">'+s+'</td></tr>'
+
 			nodes[n] = i
 			graph.add_node(pydot.Node(i, label=
 				u'<<table border="1" cellspacing="0"> \
 					<tr><td border="1" sides="B" bgcolor="#dddddd"><font color="#d71414">'+n.name + ' (' + type(n.layer).__name__ + ')</font></td></tr> \
 					<tr><td border="1" sides="B" style="dashed">in: ' + str(n.layer.in_size) + '</td></tr> \
 					<tr><td border="0">out: ' + str(n.layer.out_size) + '</td></tr> \
+					'+ reuse_html +' \
 				</table>>'))
 		for n in self.nodes.values():
 			for nn in n.nexts:
@@ -317,15 +329,22 @@ class Network(object):
 			# determinamos el tipo de nodo
 			n.determineNode()
 
-		for n in self.nodes.values(): # se dene ejecutar una vez compilados
-			n.computeNumberOfBackwardNodes()
-
 		# IN & OUT
 		self.inputs = [id_nodes_dict[i] for i in data['inputs']]
 		self.outputs = [id_nodes_dict[i] for i in data['outputs']]
 
 		# LOSSES
 		self.losses = [id_nodes_dict[i] for i in data['losses']]
+		for l in self.losses:
+			l.hasToComputeBackward()
+
+		# Despues de cargar las losses
+		for n in self.nodes.values(): # se dene ejecutar una vez compilados
+			n.computeNumberOfBackwardNodes()
+
+		for n in self.nodes_with_only_outputs.values():
+			if n not in self.inputs:
+				n.compute_forward_in_prediction = False
 
 		# METRICS
 		self.metrics = [id_nodes_dict[i] for i in data['metrics']]

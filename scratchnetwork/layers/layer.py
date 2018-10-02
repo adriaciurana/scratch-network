@@ -1,4 +1,5 @@
 import h5py
+import copy
 import sys
 import numpy as np
 from ..backend.exceptions import Exceptions
@@ -11,7 +12,8 @@ class Layer(object):
 	LAYER_COUNTER = 0
 
 	def __init__(self, node, func_repr_weights=lambda x: x, params=None):
-		self.LAYER_COUNTER += 1
+		Layer.LAYER_COUNTER += 1
+		self.LAYER_COUNTER = Layer.LAYER_COUNTER
 		if params is None:
 			params = {}
 
@@ -52,11 +54,11 @@ class Layer(object):
 		if 'number_of_inputs' in self.params:
 			if self.params['number_of_inputs'] < len(self.node.prevs):
 				raise Exceptions.NumberInputsException("Numero de entradas excedidas (" \
-				 + self.params['number_of_inputs'] + ") en " + type(self).__name__ + ":" + self.node.name)
+				 + str(self.params['number_of_inputs']) + ") en " + type(self).__name__ + ":" + self.node.name)
 			
 			elif self.params['number_of_inputs'] > len(self.node.prevs):
 				raise Exceptions.NumberInputsException("Numero de entradas inferiores (" \
-				 + self.params['number_of_inputs'] + ") en " + type(self).__name__ + ":" + self.node.name)
+				 + str(self.params['number_of_inputs']) + ") en " + type(self).__name__ + ":" + self.node.name)
 			del self.params['number_of_inputs']
 		
 		if 'regularizator' in self.params:
@@ -106,7 +108,7 @@ class Layer(object):
 			c = self.__class__
 			copy_values_instance = c.__new__(c)
 			
-			for v in self.__attrs__:
+			for v in self.__dict__: # __attrs__
 				setattr(copy_values_instance, v, copy.copy(getattr(self, v)))
 			return copy_values_instance
 
@@ -146,7 +148,6 @@ class Layer(object):
 				self.correctWeight(self.node.label, self.weights_names[i], dw)
 		else:
 			self.correctWeight(self.node.label, self.weights_names[0], dweights)
-		#print(time.time() - a0)
 
 	"""
 		COPY
@@ -157,6 +158,17 @@ class Layer(object):
 		copy_layer_instance.node = node
 		copy_layer_instance.weights = self.weights.copy()
 		copy_layer_instance.values = self.values.copy()
+		Layer.LAYER_COUNTER += 1
+		copy_layer_instance.LAYER_COUNTER = Layer.LAYER_COUNTER
+		for attr in self.__dict__:
+			if attr in ['weights', 'values', 'LAYER_COUNTER', 'node']:
+				continue
+			setattr(copy_layer_instance, attr, copy.copy(getattr(self, attr)))
+		"""print(Layer.LAYER_COUNTER)
+		print(self.__dict__)
+		print('------')
+		print(copy_layer_instance.__dict__)"""
+
 		return copy_layer_instance
 
 	"""

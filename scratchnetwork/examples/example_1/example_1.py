@@ -2,7 +2,7 @@ import sys
 import os
 import numpy as np
 
-sys.path.append(os.path.dirname(__file__)+"../../")
+sys.path.append(os.path.dirname(__file__)+"../../../")
 from scratchnetwork import Network
 from scratchnetwork.layers import Input
 from scratchnetwork.layers import FC

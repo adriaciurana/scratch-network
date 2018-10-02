@@ -7,34 +7,19 @@ from .backend.exceptions import Exceptions
 import time
 class Node(object):
 	INPUT, OUTPUT, MIDDLE, NOT_CONNECTED = range(4)
-	def __init__(self, network, name, layer, layer_args, layer_kargs):
+
+	def init(self, network, label, name, layer): #compute_forward_in_prediction, compute_backward
 		self.temp_forward_dependences = 0
 		self.temp_backward_dependences = 0
-		
+
 		self.network = network
+		self.layer = layer
 
-
-		if issubclass(layer, Layer):
-			layer_args = tuple([self] + list(layer_args))
-			self.layer = layer(*layer_args, **layer_kargs)
-		else:
-			raise Exceptions.NotFoundLayer("La capa que has introducido no existe.")
-
-		if name is None:
-			self.name = self.layer.__class__.__name__ + '_' + self.layer.LAYER_COUNTER
-			self.label = self.name
-		
-		elif isinstance(name, (list, tuple)):
-			self.name = name[1]
-			self.label = name[0]
-		else:
-			self.name = name
-			self.label = name
-		self.type = None
+		self.label = label
+		self.name = name
 
 		# Parametros pre-creacion de la capa
 		self.compute_forward_in_prediction = True
-
 		self.compute_backward = False
 		# indicamos si produce o no dependencia tanto en el forward como el backward, las metricas no bloquean las dependencias ya que no participan en el juego solo evaluan.
 		
@@ -45,6 +30,29 @@ class Node(object):
 		# auxiliares
 		self.number_backward_sum_nexts_nodes = None
 		self.number_backward_any_prevs_nodes = None
+
+		self.type = None
+
+	def __init__(self, network, name, layer, layer_args, layer_kargs):
+		if issubclass(layer, Layer):
+			layer_args = tuple([self] + list(layer_args))
+			layer = layer(*layer_args, **layer_kargs)
+		else:
+			raise Exceptions.NotFoundLayer("La capa que has introducido no existe.")
+
+		if name is None:
+			name = layer.__class__.__name__ + '_' + layer.LAYER_COUNTER
+			label = name
+		elif isinstance(name, (list, tuple)):
+			name = name[1]
+			label = name[0]
+		else:
+			name = name
+			label = name
+
+		compute_forward_in_prediction = True
+		compute_backward = False
+		self.init(network, label, name, layer)
 
 	"""
 		RELATIONS
@@ -256,29 +264,26 @@ class Node(object):
 	def batchSize(self):
 		return self.layer.batch_size
 
-	def copy(self, copy_layer=False, name_prepend=None):
+	def copy(self, copy_layer=False, name_prepend=None, network=None):
 		c = self.__class__
 		copy_node_instance = c.__new__(c)
-
-		copy_node_instance.network = self.network
-
 		if copy_layer:
-			copy_node_instance.layer = self.layer.copy(copy_node_instance)
+			layer = self.layer.copy(copy_node_instance)
 		else:
-			copy_node_instance.layer = self.layer 
-		
+			layer = self.layer 
+
 		if isinstance(name_prepend, str):
-			copy_node_instance.name = name_prepend + self.name
-			copy_node_instance.label = name_prepend + self.label
+			name = name_prepend + self.name
+			label = name_prepend + self.label
 
 		else:
-			copy_node_instance.name = self.name+'_'+copy_node_instance.layer.LAYER_COUNTER
-			copy_node_instance.label = name_prepend + self.label+'_'+copy_node_instance.layer.LAYER_COUNTER
+			name = self.name+'_'+copy_node_instance.layer.LAYER_COUNTER
+			label = name_prepend + self.label+'_'+copy_node_instance.layer.LAYER_COUNTER
 
-		copy_node_instance.temp_forward_dependences = 0
-		copy_node_instance.temp_backward_dependences = 0
-		copy_node_instance.compute_forward_in_prediction = self.compute_forward_in_prediction
-		copy_node_instance.compute_backward = self.compute_backward
+		if network is None:
+			network = self.network
+
+		copy_node_instance.init(network, label, name, layer)
 		
 		return copy_node_instance
 
@@ -304,29 +309,13 @@ class Node(object):
 		return \
 		{'label': self.label,
 		'name': self.name,
-		'compute_forward_in_prediction': self.compute_forward_in_prediction,
-		'compute_backward': self.compute_backward,
 		'layer': layer_json}
+
+		"""'compute_forward_in_prediction': self.compute_forward_in_prediction,
+		'compute_backward': self.compute_backward,"""
 
 	@staticmethod
 	def load_static(network, data, h5_container):
 		obj = Node.__new__(Node)
-		obj.label = data['label']
-		obj.name = data['name']
-		obj.compute_forward_in_prediction = data['compute_forward_in_prediction']
-		obj.compute_backward = data['compute_backward']
-		obj.layer = Layer.load_static(obj, data['layer'], h5_container['layer'])
-
-		# constructor normal
-		obj.temp_forward_dependences = 0
-		obj.temp_backward_dependences = 0
-		
-		obj.network = network
-
-		obj.prevs = []
-		obj.nexts = []
-
-		# auxiliares
-		obj.number_backward_sum_nexts_nodes = None
-		obj.number_backward_any_prevs_nodes = None
+		obj.init(network, data['label'], data['name'], Layer.load_static(obj, data['layer'], h5_container['layer'])) #, data['compute_forward_in_prediction'], data['compute_backward']
 		return obj

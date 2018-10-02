@@ -14,11 +14,13 @@ from scratchnetwork.layers import DropOut
 from scratchnetwork.layers import ReLU
 from scratchnetwork.layers import Flatten
 from scratchnetwork.layers import Softmax
+from scratchnetwork.layers import Concat
 from scratchnetwork.losses import SoftmaxCrossEntropy
 from scratchnetwork.metrics import Accuracy
 from scratchnetwork.optimizers import SGD
 from scratchnetwork.regularizators import L1 as LR1C
 from scratchnetwork.layers import OneHotDecode
+from scratchnetwork.utils import Pipeline
 LR1 = LR1C(0.0005)
 
 
@@ -40,12 +42,20 @@ inputY = net.Node("Label", Input, [1])
 o = net.Node("Block 1: Conv2D", Conv2D, num_filters=32, kernel_size=(3,3), params={'regularizator': LR1})(inputX)
 o = net.Node("Block 1: ReLU", ReLU)(o)
 
-o = net.Node("Block 2: Conv2D", Conv2D, num_filters=64, kernel_size=(3,3), params={'regularizator': LR1})(o)
-o = net.Node("Block 2: ReLU", ReLU)(o)
-o = net.Node("Block 2: Maxpooling", Pooling2D, "max", pool_size=(2, 2))(o)
-o = net.Node("Block 2: Dropout", DropOut, 0.25)(o)
-o = net.Node("Block 2: Flatten", Flatten)(o)
+def creator(net):
+	i = net.Node("Block 2: Conv2D", Conv2D, num_filters=64, kernel_size=(3,3), params={'regularizator': LR1})
+	o = net.Node("Block 2: ReLU", ReLU)(i)
+	o = net.Node("Block 2: Maxpooling", Pooling2D, "max", pool_size=(2, 2))(o)
+	o = net.Node("Block 2: Dropout", DropOut, 0.25)(o)
+	o = net.Node("Block 2: Flatten", Flatten)(o)
+	return i, o
+block = net.Node("Pipeline", Pipeline, creator=creator)
+block1 = block.copy(reuse=False)(o)
+block2 = block.copy(reuse=False)(o)
 
+o = net.Node("Concat", Concat, axis=0)(block1, block2)
+#print([i.name for i in o.prevs])
+#print(block1.nexts[0].name)
 o = net.Node("FC 1: FC", FC, 128, params={'regularizator': LR1})(o)
 o = net.Node("FC 1: ReLU", ReLU)(o)
 o = net.Node("FC 1: Dropout", DropOut, 0.5)(o)
@@ -66,7 +76,7 @@ batch_index = 0
 batch_size = 128
 epoch = 0
 
-for i in range(60):
+for i in range(3):
 	Xaux = images_train[batch_index:(batch_index + batch_size)]
 	Yaux = labels_train[batch_index:(batch_index + batch_size)]
 
@@ -80,5 +90,6 @@ for i in range(60):
 	net.monitoring()
 	print(str(batch_index) + "/" + str(epoch))
 	print('-----'+ str(time.time() - t) +'------')
+
 
 print(net.save("example.h5"))

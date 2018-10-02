@@ -10,3 +10,4 @@ from .softmax import Softmax
 from .dropout import DropOut
 from .flatten import Flatten
 from .onehotdecode import OneHotDecode
+from .concat import Concat
