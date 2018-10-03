@@ -126,7 +126,7 @@ class Layer(object):
 		weights_losses: Indica el peso de cada loss, por defecto este es 1/num_losses
 		name: indica el nombre del parametro a actualizar
 	"""
-	def correctWeight(self, label, name, dweight):
+	def correctWeight(self, name, dweight):
 		# primero obtenemos el peso a corregir
 		w = getattr(self.weights, name)
 		# aplicamos el funcional respecto al batch
@@ -136,7 +136,7 @@ class Layer(object):
 		dweight = dweight + self.getRegularization(name, w)
 
 		# realizamos la correccion con respecto al optimizador
-		iweight = self.node.network.optimizer.step(label, name, dweight)
+		iweight = self.node.network.optimizer.step(self.node.label, name, dweight) # label = LAYER_COUNTER
 		setattr(self.weights, name, w + iweight)
 
 	def correctWeights(self, dweights):
@@ -145,9 +145,9 @@ class Layer(object):
 		if isinstance(dweights, (list, tuple)):
 			for i, dw in enumerate(dweights):
 				# aplicamos las correciones a los pesos
-				self.correctWeight(self.node.label, self.weights_names[i], dw)
+				self.correctWeight(self.weights_names[i], dw)
 		else:
-			self.correctWeight(self.node.label, self.weights_names[0], dweights)
+			self.correctWeight(self.weights_names[0], dweights)
 
 	"""
 		COPY

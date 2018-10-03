@@ -38,6 +38,6 @@ class Initializer(object):
 			return np.rand(*shape) * np.sqrt(2.0/shape[1])
 
 		elif self.name == 'lecun':
-			fan_in = shape[1]*shape[2]*shape[0]
+			fan_in = np.prod(shape)
 			stddev = np.sqrt(1./fan_in)
 			return np.random.normal(loc = 0, scale=stddev, size=shape)

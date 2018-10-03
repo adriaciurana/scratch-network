@@ -8,7 +8,7 @@ class SGD(Optimizer):
 		self.iweights = {}
 	
 	def step(self, label, weight_name, dweight):
-		weight_name = label + '_' + weight_name
+		weight_name = str(label) + '_' + weight_name
 		if self.clip is None:
 			coef = 1
 		else:
