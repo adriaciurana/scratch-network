@@ -1,5 +1,6 @@
 from ..node import Node
 from ..layers.layer import Layer
+from ..backend.exceptions import Exceptions
 class Pipeline(object):
 	def __init__(self, network, name, creator):
 		self.network = network
@@ -7,12 +8,10 @@ class Pipeline(object):
 		self.subnet = Pipeline.SubNetwork()
 		aux = creator(self.subnet)
 		if len(aux) < 2 or len(aux) > 2:
-			print("Error, la funcion debe devolver la entrada y la salida.")
-			exit()
+			raise Exceptions.PipelineInputAndOutputFunction("Error, la funcion debe devolver la entrada y la salida.")
 
 		if not isinstance(aux[0], Node) or not isinstance(aux[1], Node):
-			print("Error, la funcion debe devolver los nodos de la entrada y la salida.")
-			exit()
+			raise Exceptions.PipelineInputAndOutputFunction("Error, la funcion debe devolver los nodos de la entrada y la salida.")
 
 		self.input, self.output = aux
 		self.copies = 0

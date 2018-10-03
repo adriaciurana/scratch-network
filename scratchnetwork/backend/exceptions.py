@@ -27,3 +27,13 @@ class Exceptions:
 		pass
 	class NotCompiledError(Exception):
 		pass
+
+	# Pipeline
+	class PipelineInputAndOutputFunction(Exception):
+		pass
+	class PipelineInputAndOutputFunction(Exception):
+		pass
+
+	# Operation
+	class OperationNotExist(Exception):
+		pass

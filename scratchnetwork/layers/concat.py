@@ -12,14 +12,14 @@ class Concat(Layer):
 		out = [i for i in self.in_size[0]]
 		out[self.axis] = 0
 		
-		self.accum_idx = []
+		self.values.accum_idx = []
 		
 		for in_size in self.in_size:
 			aux = in_size[self.axis]
 			out[self.axis] += aux
-			self.accum_idx.append(aux)
+			self.values.accum_idx.append(aux)
 
-		self.accum_idx = self.accum_idx[:-1]
+		self.values.accum_idx = self.values.accum_idx[:-1]
 		return tuple(out)
 
 	def forward(self, inputs):
@@ -27,5 +27,4 @@ class Concat(Layer):
 		return np.concatenate(inputs, axis=self.axis + 1)
 
 	def derivatives(self, doutput):
-		a = np.split(doutput, self.accum_idx, axis=self.axis + 1)
-		return np.split(doutput, self.accum_idx, axis=self.axis + 1), None
+		return np.split(doutput, self.values.accum_idx, axis=self.axis + 1), None

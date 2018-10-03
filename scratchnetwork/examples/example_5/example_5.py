@@ -73,10 +73,10 @@ net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
 
 # Llenamos
 batch_index = 0
-batch_size = 128
+batch_size = 10
 epoch = 0
 
-for i in range(3):
+for i in range(3000):
 	Xaux = images_train[batch_index:(batch_index + batch_size)]
 	Yaux = labels_train[batch_index:(batch_index + batch_size)]
 

@@ -11,3 +11,4 @@ from .dropout import DropOut
 from .flatten import Flatten
 from .onehotdecode import OneHotDecode
 from .concat import Concat
+from .operation import Operation
