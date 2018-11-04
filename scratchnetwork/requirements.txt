@@ -1,0 +1,9 @@
+scipy==1.1.0
+Cython==0.28.2
+matplotlib==2.2.2
+h5py==2.7.1
+python_mnist==0.6
+pydot==1.2.4
+numpy==1.14.5
+mnist==0.2.2
+scikit_learn==0.20.0

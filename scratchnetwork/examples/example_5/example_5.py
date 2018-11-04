@@ -54,9 +54,7 @@ block1 = block.copy(reuse=False)(o)
 block2 = block.copy(reuse=False)(o)
 
 o = net.Node("Concat", Concat, axis=0)(block1, block2)
-#print([i.name for i in o.prevs])
-#print(block1.nexts[0].name)
-o = net.Node("FC 1: FC", FC, 128, params={'regularizator': LR1})(o)
+ço = net.Node("FC 1: FC", FC, 128, params={'regularizator': LR1})(o)
 o = net.Node("FC 1: ReLU", ReLU)(o)
 o = net.Node("FC 1: Dropout", DropOut, 0.5)(o)
 
@@ -73,7 +71,7 @@ net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
 
 # Llenamos
 batch_index = 0
-batch_size = 10
+batch_size = 128
 epoch = 0
 
 for i in range(3000):

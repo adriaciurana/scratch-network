@@ -1,7 +1,7 @@
 from .optimizer import Optimizer
 import numpy as np
 class SGD(Optimizer):
-	def __init__(self, lr=1e-5, mu=0.9, clip=1):
+	def __init__(self, lr=1e-3, mu=0.9, clip=1):
 		self.lr = lr
 		self.mu = mu
 		self.clip = clip

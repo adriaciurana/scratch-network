@@ -1,7 +1,6 @@
 from .layer import Layer
 from ..backend.initializer import Initializer
-import numpy as np
-import threading
+import numpy as n
 class FC(Layer):
 	def __init__(self, node, neurons, initializer={'weights': Initializer("lecun"), 'bias': Initializer("normal")}, params=None):
 		if params is None:

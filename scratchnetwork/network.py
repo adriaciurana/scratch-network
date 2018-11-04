@@ -1,8 +1,5 @@
-import h5py
-import json
+import h5py, json, pydot, copy
 import numpy as np
-import pydot
-import copy
 from .node import Node
 from .layers.layer import Layer
 from .optimizers import SGD
