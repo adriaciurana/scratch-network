@@ -50,4 +50,4 @@ Actualmente están implementadas las siguientes caracteristicas:
 
 ### Instalación
 
-Inicialmente se requiere usar el fichero ''' install.sh ''' para compilar las capas Cython e instalar las dependencias necesarias.
+Inicialmente se requiere usar el fichero ``` install.sh ``` para compilar las capas Cython e instalar las dependencias necesarias.
