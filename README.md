@@ -51,3 +51,7 @@ Actualmente están implementadas las siguientes caracteristicas:
 ### Instalación
 
 Inicialmente se requiere usar el fichero ``` install.sh ``` para compilar las capas Cython e instalar las dependencias necesarias.
+
+### Colaboraciones
+
+Este proyecto esta abierto a cualquier tipo de cambios, si quieres participar ¡adelante! Puedes contactar conmigo en info@bigneuralvision.com
