@@ -19,7 +19,7 @@ from scratchnetwork.metrics import Accuracy
 from scratchnetwork.optimizers import SGD
 from scratchnetwork.regularizators import L1 as LR1C
 from scratchnetwork.layers import OneHotDecode
-LR1 = LR1C(0.0005)
+LR1 = LR1C(0.005)
 
 
 # MNIST LOAD
@@ -66,7 +66,7 @@ batch_index = 0
 batch_size = 128
 epoch = 0
 
-for i in range(60):
+for i in range(600):
 	Xaux = images_train[batch_index:(batch_index + batch_size)]
 	Yaux = labels_train[batch_index:(batch_index + batch_size)]
 
