@@ -3,7 +3,7 @@ from ..backend.initializer import Initializer
 import numpy as np
 import threading
 class FC(Layer):
-	def __init__(self, node, neurons, initializer={'weights': Initializer("normal"), 'bias': Initializer("normal")}, params=None):
+	def __init__(self, node, neurons, initializer={'weights': Initializer("lecun"), 'bias': Initializer("normal")}, params=None):
 		if params is None:
 			params = {}
 		if 'weights_names' not in params:
@@ -22,7 +22,7 @@ class FC(Layer):
 	def compile(self):
 		super(FC, self).compile()
 		
-		self.weights.weights = self.initializer['weights'].get(shape=(sum(self.in_size_flatten), self.neurons)) / sum(self.in_size_flatten) #np.random.rand(sum(self.in_size_flatten), self.neurons)
+		self.weights.weights = self.initializer['weights'].get(shape=(sum(self.in_size_flatten), self.neurons)) #/ sum(self.in_size_flatten) #np.random.rand(sum(self.in_size_flatten), self.neurons)
 		self.weights.bias = self.initializer['bias'].get(shape=[self.neurons]) #np.random.rand(1, self.neurons)
 
 	def forward(self, inputs):

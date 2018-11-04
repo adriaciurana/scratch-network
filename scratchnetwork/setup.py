@@ -8,9 +8,11 @@ import os
 import Cython.Compiler.Options
 Cython.Compiler.Options.annotate = True
 import numpy
+from pathlib import Path
 
 ext_modules=[]
-for ext in glob.glob('*/cython/resources/*.pyx'):
+for ext in Path('').glob('**/cython/resources/*.pyx'):
+	ext = str(ext)
 	filename = os.path.basename(ext)
 	dirname = os.path.dirname(ext)
 	aux = filename.split('.')

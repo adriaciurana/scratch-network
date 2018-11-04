@@ -3,6 +3,7 @@ from ..backend.initializer import Initializer
 import numpy as np
 from .cython import conv2d
 import threading
+from .cs231n import fast_layers
 
 class Conv2D(Layer):
 	def __init__(self, node, num_filters, kernel_size=(3,3), stride=(1, 1), padding='valid', initializer={'weights': Initializer("lecun"), 'bias': Initializer("normal")}, params=None):
@@ -43,21 +44,26 @@ class Conv2D(Layer):
 			self.num_dim = 1
 		else:
 			self.num_dim = self.in_size[0][2]
-		self.weights.kernels = self.initializer['weights'].get(shape=(self.num_dim, self.kernel_size[0], self.kernel_size[1], self.num_filters)) / (self.kernel_size[0]*self.kernel_size[1]*self.num_filters)
+		self.weights.kernels = self.initializer['weights'].get(shape=(self.num_dim, self.kernel_size[0], self.kernel_size[1], self.num_filters)) #/ (self.kernel_size[0]*self.kernel_size[1]*self.num_filters)
 		self.weights.bias = self.initializer['bias'].get(shape=[self.num_filters])
 
 	def forward(self, inputs):
 		super(Conv2D, self).forward(inputs)
 
-		self.values.input = np.pad(inputs[0], [(0, 0), (self.padding_size[0], self.padding_size[0]), (self.padding_size[1], self.padding_size[1]), (0, 0)], mode='constant')
-		out = conv2d.nb_forward(self.values.input, self.weights.kernels, self.weights.bias, self.stride)
-		return out
+		#self.values.input = np.pad(inputs[0], [(0, 0), (self.padding_size[0], self.padding_size[0]), (self.padding_size[1], self.padding_size[1]), (0, 0)], mode='constant')
+		#out = conv2d.nb_forward(self.values.input, self.weights.kernels, self.weights.bias, self.stride)
+		out, self.values.cache = fast_layers.conv_forward_fast(inputs[0].transpose(0, 3, 1, 2), 
+			self.weights.kernels.transpose(3, 0, 1, 2), self.weights.bias, 
+			{'stride': int(self.stride[0]), 'pad': int(self.padding_size[0])})
+		return out.transpose(0, 2, 3, 1)
 
 
 	def derivatives(self, doutput):
-		dx, dw, db = conv2d.nb_derivatives(doutput, self.values.input, self.weights.kernels, self.stride)		
+		#dx, dw, db = conv2d.nb_derivatives(doutput, self.values.input, self.weights.kernels, self.stride)		
 		# devolvemos resultados
-		return dx[:, self.padding_size[0]:(self.in_size[0][0] - self.padding_size[0]), self.padding_size[1]:(self.in_size[0][1] - self.padding_size[1]), :], (dw, db)
+		#return dx[:, self.padding_size[0]:(self.in_size[0][0] - self.padding_size[0]), self.padding_size[1]:(self.in_size[0][1] - self.padding_size[1]), :], (dw, db)
+		dx, dw, db = fast_layers.conv_backward_fast(doutput.transpose(0, 3, 1, 2), self.values.cache)
+		return dx.transpose(0, 2, 3, 1), (dw.transpose(1, 2, 3, 0), db)
 
 	def save(self, h5_container):
 		layer_json = super(Conv2D, self).save(h5_container)

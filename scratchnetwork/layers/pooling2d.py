@@ -2,6 +2,7 @@ from .layer import Layer
 from ..backend.initializer import Initializer
 import numpy as np
 from .cython import pooling2d
+from .cs231n import fast_layers
 
 class Pooling2D(Layer):
 	def __init__(self, node, type_pooling='max', pool_size=(2,2), stride=(1, 1), padding='valid', params=None):
@@ -44,6 +45,8 @@ class Pooling2D(Layer):
 		input = np.pad(inputs[0], [(0, 0), (self.padding_size[0], self.padding_size[0]), (self.padding_size[1], self.padding_size[1]), (0, 0)], mode='constant')
 		if self.type_pooling == 'max':
 			out, self.values.mask = pooling2d.nb_forward_max(input, self.pool_size, self.stride)
+			#out, self.values.cache = fast_layers.max_pool_forward_fast(inputs[0].transpose(0, 3, 1, 2), {'pool_height': self.pool_size[0], 'pool_width': self.pool_size[1], 'stride': int(self.stride[0])})
+			#out = out.transpose(0, 2, 3, 1)
 		elif self.type_pooling == 'mean':
 			out = pooling2d.nb_forward_mean(input, self.pool_size, self.stride)
 		return out
@@ -51,6 +54,8 @@ class Pooling2D(Layer):
 	def derivatives(self, doutput):
 		if self.type_pooling == 'max':
 			dx = pooling2d.nb_derivatives_max(doutput, tuple(self.in_size[0]), self.values.mask, self.stride)
+			#dx = fast_layers.max_pool_backward_fast(doutput.transpose(0, 3, 1, 2), self.values.cache)
+			#dx = dx.transpose(0, 2, 3, 1)
 		elif self.type_pooling == 'mean':
 			dx = pooling2d.nb_derivatives_mean(doutput, tuple(self.in_size[0]), self.pool_size, self.stride)
 		return dx[:, self.padding_size[0]:(self.in_size[0][0] - self.padding_size[0]), self.padding_size[1]:(self.in_size[0][1] - self.padding_size[1]), :]

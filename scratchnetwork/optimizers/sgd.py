@@ -20,7 +20,7 @@ class SGD(Optimizer):
 			iweight = self.iweights[weight_name]
 		except:
 			iweight = 0 
-		self.iweights[weight_name] = - self.lr*dweight*coef + self.mu*iweight
+		self.iweights[weight_name] = -self.lr*dweight*coef + self.mu*iweight
 		return self.iweights[weight_name]
 
 	def save(self, h5_container):
