@@ -35,9 +35,16 @@ class Initializer(object):
 				return np.random.randn(*shape)*self.args[1] + self.args[0]
 
 		elif self.name == 'xavier':
-			return np.rand(*shape) * np.sqrt(2.0/shape[1])
+			# receptive_field = w * h * ... (of filter, weights, etc)
+			# fan_in = receptive_field * input_features
+			fan_in = np.sqrt(np.prod(shape[:-1]))
+			fan_out = np.sqrt(np.prod(shape[1:]))
+			stddev = 1./((fan_in + fan_out) / 2)
+			return np.rand(*shape) * stddev
 
 		elif self.name == 'lecun':
-			fan_in = int(np.prod(shape[:-1]))
-			stddev = np.sqrt(1./fan_in)
+			# receptive_field = w * h * ... (of filter, weights, etc)
+			# fan_in = receptive_field * input_features
+			fan_in = np.sqrt(np.prod(shape[:-1]))
+			stddev = 1./fan_in
 			return np.random.randn(*shape)*stddev

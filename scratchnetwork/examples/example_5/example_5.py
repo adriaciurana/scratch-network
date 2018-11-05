@@ -26,7 +26,7 @@ LR1 = LR1C(0.0005)
 
 # MNIST LOAD
 from mnist import MNIST
-mndata = MNIST('dataset/data')
+mndata = MNIST('../datasets/mnist/data')
 images_train, labels_train = mndata.load_training()
 images_train, labels_train = np.reshape(np.array(images_train), [-1, 28, 28]), np.array(labels_train)
 

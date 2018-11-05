@@ -1,6 +1,6 @@
 from .layer import Layer
 from ..backend.initializer import Initializer
-import numpy as n
+import numpy as np
 class FC(Layer):
 	def __init__(self, node, neurons, initializer={'weights': Initializer("lecun"), 'bias': Initializer("normal")}, params=None):
 		if params is None:
@@ -21,8 +21,8 @@ class FC(Layer):
 	def compile(self):
 		super(FC, self).compile()
 		
-		self.weights.weights = self.initializer['weights'].get(shape=(sum(self.in_size_flatten), self.neurons)) #/ sum(self.in_size_flatten) #np.random.rand(sum(self.in_size_flatten), self.neurons)
-		self.weights.bias = self.initializer['bias'].get(shape=[self.neurons]) #np.random.rand(1, self.neurons)
+		self.weights.weights = self.initializer['weights'].get(shape=(sum(self.in_size_flatten), self.neurons))
+		self.weights.bias = self.initializer['bias'].get(shape=[self.neurons])
 
 	def forward(self, inputs):
 		super(FC, self).forward(inputs)
