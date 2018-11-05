@@ -1,26 +1,31 @@
 from .optimizer import Optimizer
 import numpy as np
 class SGD(Optimizer):
-	def __init__(self, lr=1e-3, mu=0.9, clip=1):
+	def __init__(self, lr=1e-2, mu=0.9, clip=1, decay=0.):
+		super().__init__()
 		self.lr = lr
 		self.mu = mu
 		self.clip = clip
 		self.iweights = {}
+		self.decay = decay
 	
 	def step(self, label, weight_name, dweight):
 		weight_name = str(label) + '_' + weight_name
-		if self.clip is None:
-			coef = 1
-		else:
+		if self.clip is not None:
 			dweight_flatten = dweight.flatten()
 			dweight_norm = np.linalg.norm(dweight_flatten, 2)
-			coef = self.clip/max(dweight_norm, self.clip)
-
-		try:
-			iweight = self.iweights[weight_name]
-		except:
+			dweight = self.clip/max(dweight_norm, self.clip)*dweight
+		
+		if self.iterations == 0:
 			iweight = 0 
-		self.iweights[weight_name] = -self.lr*dweight*coef + self.mu*iweight
+		else:
+			iweight = self.iweights[weight_name]
+
+		lr = self.lr
+		if self.decay > 0:
+			lr *= (1. / (1. + self.decay * self.iterations))
+
+		self.iweights[weight_name] = -lr*dweight + self.mu*iweight
 		return self.iweights[weight_name]
 
 	def save(self, h5_container):

@@ -197,6 +197,7 @@ class Network(object):
 		self.batch_size = self.inputs[0].batchSize()
 		
 		self.backpropagation()
+		self.optimizer.iteration()
 
 	def predict(self, X):
 		self.predict_flag = True

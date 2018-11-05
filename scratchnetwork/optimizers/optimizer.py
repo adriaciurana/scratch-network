@@ -3,10 +3,14 @@ from ..backend.misc import Misc
 from ..optimizers import *
 class Optimizer(object):
 	def __init__(self):
-		raise NotImplemented
+		self.iterations = 0
+		
 	
 	def step(self, label, weight_name, dweight):
 		raise NotImplemented
+
+	def iteration(self):
+		self.iterations += 1
 
 	def save(self, h5_container):
 		optimizer_json = {'type': self.__class__.__name__, 'module': self.__class__.__module__, 'attributes':{}}
