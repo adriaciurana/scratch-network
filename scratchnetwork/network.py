@@ -38,6 +38,10 @@ class Network(object):
 		self.batch_size = 0
 
 	def Node(self, name, layer, *layer_args, **layer_kargs):
+		for n in self.nodes.values():
+			if n.name == name:
+				raise NameError('El nombre de esta capa ya existe')
+
 		if layer is Pipeline:
 			node = layer(self, name, layer_kargs['creator'] if 'creator' in layer_kargs else layer_args[0])
 			return node
@@ -153,6 +157,11 @@ class Network(object):
 		# cambiamos estado
 		self.status = Network.STATUS.COMPILED
 
+		# Iniciamos los diccionarios de monitoreo
+		self.losses_monitoring = [0 for _ in self.losses] #dict([(l.name, 0) for l in self.losses])
+		self.metrics_monitoring = [0 for _ in self.metrics] #dict([(m.name, 0) for m in self.metrics])
+		self.iterations_monitoring = 0
+
 	def start(self, inputs, outputs):
 		# Entradas y salidas de la red
 		self.inputs = inputs
@@ -199,6 +208,13 @@ class Network(object):
 		self.backpropagation()
 		self.optimizer.iteration()
 
+		# accumulamos la monitorizacion
+		for k in range(len(self.losses_monitoring)):
+			self.losses_monitoring[k] += self.losses[k].temp_forward_result
+		for k in range(len(self.metrics_monitoring)):
+			self.metrics_monitoring[k] += self.metrics[k].temp_forward_result
+		self.iterations_monitoring += 1
+
 	def predict(self, X):
 		self.predict_flag = True
 		for xk, xv in X.items():
@@ -212,8 +228,16 @@ class Network(object):
 		return dict([(n.label, n.temp_forward_result) for n in self.outputs])
 
 	def monitoring(self):
-		print('Losses:', dict([(l.name, l.temp_forward_result) for l in self.losses]))
-		print('Metrics:', dict([(m.name, m.temp_forward_result) for m in self.metrics]))
+		print('Losses:', dict([(self.losses[k].name, self.losses_monitoring[k] / self.iterations_monitoring) for k in range(len(self.losses_monitoring))]))
+		print('Metrics:', dict([(self.metrics[k].name, self.metrics_monitoring[k] / self.iterations_monitoring) for k in range(len(self.metrics_monitoring))]))
+		
+		# reseteamos la monitorizacion
+		self.iterations_monitoring = 0
+		for k in range(len(self.losses_monitoring)):
+			self.losses_monitoring[k] = 0
+		for k in range(len(self.metrics_monitoring)):
+			self.metrics_monitoring[k] = 0
+
 
 	def plot(self, filestr):
 		if self.status != Network.STATUS.COMPILED:
@@ -240,9 +264,11 @@ class Network(object):
 					<tr><td border="0">out: ' + str(n.layer.out_size) + '</td></tr> \
 					'+ reuse_html +' \
 				</table>>'))
+		
 		for n in self.nodes.values():
 			for nn in n.nexts:
 				graph.add_edge(pydot.Edge(nodes[n], nodes[nn]))
+		
 		graph.write_png(filestr)
 
 	def get_weights(self, label):

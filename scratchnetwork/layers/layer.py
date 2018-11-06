@@ -113,11 +113,12 @@ class Layer(object):
 			return copy_values_instance
 
 	def getRegularization(self, name, weight):
+		if self.regularizator is None:
+				return 0
+
 		if isinstance(self.regularizator, dict):
 			return self.regularizator[name].function(weight)
 		else:
-			if self.regularizator is None:
-				return 0
 			return self.regularizator.function(weight)
 	""" 
 	Para actualizar un peso se necesitan diversos parametros:
@@ -129,12 +130,13 @@ class Layer(object):
 	def correctWeight(self, name, dweight):
 		# primero obtenemos el peso a corregir
 		w = getattr(self.weights, name)
-		# aplicamos el funcional respecto al batch
-		dweight /= self.node.network.batch_size
 		# añadimos la regularizacion
 		# actualizamos la derivada
-		dweight = dweight + self.getRegularization(name, w)
+		dweight += self.getRegularization(name, w)
 
+		# aplicamos el funcional respecto al batch
+		dweight /= self.node.network.batch_size
+		
 		# realizamos la correccion con respecto al optimizador
 		iweight = self.node.network.optimizer.step(self.node.label, name, dweight) # label = LAYER_COUNTER
 		setattr(self.weights, name, w + iweight)

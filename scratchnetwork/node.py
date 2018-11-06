@@ -188,7 +188,7 @@ class Node(object):
 
 				# Solo se podra ejecutar si todas las dependencias han terminado de calcularse.
 				n.incrementBackwardDependences()
-				#print(self.name, n.name, n.number_backward_sum_nexts_nodes, [m.compute_backward for m in n.nexts])
+				
 				if n.checkBackwardDependences():
 					n.backpropagation()
 					# una vez realizado el backward se vuelven a reinicializar las estructuras

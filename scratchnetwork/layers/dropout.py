@@ -17,8 +17,8 @@ class DropOut(Layer):
 		super(DropOut, self).forward(inputs)
 		input = inputs[0]
 
-		if not self.predict_flag:
-			self.values.mask = np.random.binomial(1, self.prob, size=input.shape) / self.prob
+		if not self.predict_flag: # training
+			self.values.mask = np.float64(np.random.binomial(1, self.prob, size=input.shape)) / self.prob
 		else:
 			self.values.mask = 1./self.prob
 		return input * self.values.mask

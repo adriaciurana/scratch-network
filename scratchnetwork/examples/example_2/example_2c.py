@@ -13,18 +13,27 @@ from scratchnetwork.optimizers import SGD
 from scipy import signal
 from scipy import ndimage
 from scipy import misc
+
+UNIQUE = False
+
 net = Network()
 inputX = net.Node("Input", Input, [10, 10, 1])
 inputY = net.Node("Y", Input, [6, 6, 1])
 
-B = net.Node("B", Conv2D, 1, (3, 3), (1, 1), 'valid')
-C = net.Node("Output", Conv2D, 1, (3, 3), (1, 1), 'valid')
+if UNIQUE:
+	C = net.Node("Output", Conv2D, 1, (5, 5), (1, 1), 'valid')
+else:
+	B = net.Node("B", Conv2D, 1, (3, 3), (1, 1), 'valid')
+	C = net.Node("Output", Conv2D, 1, (3, 3), (1, 1), 'valid')
 
 L1 = net.Node("MSE", MSE)
 M1 = net.Node("MRSE", MRSE)
 
-inputX.addNext(B)
-B.addNext(C)
+if UNIQUE:
+	inputX.addNext(C)
+else:
+	inputX.addNext(B)
+	B.addNext(C)
 
 L1.addPrev(C)
 L1.addPrev(inputY)
@@ -67,7 +76,7 @@ for f in [w1, w2, w3]:
 		if i % 500 == 0:
 			net.monitoring()
 	out = net.predict({'Input': a})
-	kernels = net.get_weights('B').get('kernels')
+	kernels = net.get_weights('Output').get('kernels')
 
 	# plot
 	plt.subplot(1,2,1)

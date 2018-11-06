@@ -6,7 +6,8 @@ import threading
 from .cs231n import fast_layers
 
 class Conv2D(Layer):
-	def __init__(self, node, num_filters, kernel_size=(3,3), stride=(1, 1), padding='valid', initializer={'weights': Initializer("lecun"), 'bias': Initializer("normal")}, params=None):
+	# params = {'regularizator': {'kernels': ..., 'bias': ...}}
+	def __init__(self, node, num_filters, kernel_size=(3,3), stride=(1, 1), padding='valid', initializer={'weights': Initializer("lecun", "uniform"), 'bias': Initializer("zeros")}, params=None):
 		if params is None:
 			params = {}
 

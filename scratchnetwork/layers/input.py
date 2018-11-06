@@ -15,7 +15,7 @@ class Input(Layer):
 		if data.shape[1:] != self.shape:
 			raise Exceptions.InputShapeException("Los datos en la capa "+self.__class__.__name__+": " + self.node.name + " tiene un tamaño incorrecto. \
 				Son "+str(data.shape[1:])+" y deberian ser " + str(self.shape) + ".")
-		self.data = data
+		self.data = np.float64(data)
 		
 		self.batch_size_input = self.data.shape[0]
 

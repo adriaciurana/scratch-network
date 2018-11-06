@@ -15,4 +15,4 @@ class OneHotDecode(Layer):
 
 	def forward(self, inputs):
 		super(OneHotDecode, self).forward(inputs)
-		return np.argmax(inputs[0], axis=-1).reshape(-1, 1)
+		return np.float64(np.argmax(inputs[0], axis=-1).reshape(-1, 1))
