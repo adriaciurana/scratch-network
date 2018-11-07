@@ -76,13 +76,11 @@ class Initializer(object):
 			elif len(self.args) == 2:
 				return np.random.randn(*shape)*self.args[1] + self.args[0]
 
-		elif self.name == 'xavier':
+		elif self.name == 'he':
 			if len(self.args) == 0 or (len(self.args) == 1 and self.args[0] == 'uniform'):
-				return compute_distribution(shape, distribution=Initializer.UNIFORM, mode=Initializer.FAN_AVG, scale=2.0)
+				return compute_distribution(shape, distribution=Initializer.UNIFORM, mode=Initializer.FAN_IN, scale=2.0)
 			elif len(self.args) == 1 and self.args[0] == 'normal':
-				return compute_distribution(shape, distribution=Initializer.NORMAL, mode=Initializer.FAN_AVG, scale=2.0)
-
-
+				return compute_distribution(shape, distribution=Initializer.NORMAL, mode=Initializer.FAN_IN, scale=2.0)
 
 		elif self.name == 'lecun':
 			if len(self.args) == 0 or (len(self.args) == 1 and self.args[0] == 'uniform'):
