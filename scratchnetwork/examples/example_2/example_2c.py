@@ -14,7 +14,7 @@ from scipy import signal
 from scipy import ndimage
 from scipy import misc
 
-UNIQUE = False
+UNIQUE = True
 
 net = Network()
 inputX = net.Node("Input", Input, [10, 10, 1])
@@ -41,7 +41,7 @@ L1.addPrev(inputY)
 M1.addPrev(C)
 M1.addPrev(inputY)
 
-net.compile(losses=[L1], metrics=[M1], optimizer=SGD(lr=0.0001, clip=None))
+net.compile(inputs=[inputX], outputs=[C], losses=[L1], metrics=[M1])
 net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
 
 # Llenamos
@@ -56,8 +56,7 @@ w3 = [np.exp(-z*z/(2*s*s))/np.sqrt(2*np.pi*s*s) for z in range(-k,k+1)]
 w3 = np.outer(w3, w3)
 for f in [w1, w2, w3]:
 	batch_index = 0
-	net.compile(losses=[L1], metrics=[M1])
-	net.start(inputs=[inputX], outputs=[C])
+	net.recompile()
 
 	f *= 3
 	ff = np.flipud(np.fliplr(f))

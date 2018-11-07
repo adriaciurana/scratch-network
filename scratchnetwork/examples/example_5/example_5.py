@@ -65,8 +65,7 @@ output = net.Node("Output", OneHotDecode)(FC2softmax)
 L1 = net.Node("Cross Entropy", SoftmaxCrossEntropy)(FC2, inputY)
 M1 = net.Node("Accuracy", Accuracy)(output, inputY)
 
-net.compile(losses=[L1], metrics=[M1], optimizer=SGD(lr=1e-2, clip=None))
-net.start(inputs=[inputX], outputs=[output])
+net.compile(inputs=[inputX], outputs=[output], losses=[L1], metrics=[M1], optimizer=SGD(lr=1e-2, clip=None))
 net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
 
 # Llenamos

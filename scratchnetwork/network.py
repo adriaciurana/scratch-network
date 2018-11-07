@@ -1,4 +1,4 @@
-import h5py, json, pydot, copy
+import h5py, json, pydot, copy, time
 import numpy as np
 from .node import Node
 from .layers.layer import Layer
@@ -6,6 +6,7 @@ from .optimizers import SGD
 from .optimizers.optimizer import Optimizer
 from .backend.exceptions import Exceptions
 from .utils.pipeline import Pipeline
+from random import shuffle
 
 class Network(object):
 	# Posibles estados de la red
@@ -102,22 +103,15 @@ class Network(object):
 		for n in self.nodes_with_only_outputs.values():
 			n.computeSize()
 
-	def compile(self, losses, metrics = [], optimizer=SGD()):
-		self.metrics = metrics
-		# Calculamos los pesos de las losses
-		# si la entrada ha sido una lista los pesos de cada loss son equiprobables.
-		if isinstance(losses, list):
-			v = 1./len(losses)
-			for l in losses:
-				l.layer.weight = v
-			self.losses = losses
+	def __start(self):
+		# iniciamos
+		# todos los nodos que solo tengan salidas y no esten en inputs deberan tener el compute_forward_in_prediction = False
+		# Porque no participaran en la prediccion
+		for n in self.nodes_with_only_outputs.values():
+			if n not in self.inputs:
+				n.compute_forward_in_prediction = False
 
-		# si en cambio se ha introducido un diccionario del tipo {Loss1: 0.5, Loss2: 0.3, Loss3: 0.2}
-		elif isinstance(losses, dict):
-			for k, v in losses.items():
-				k.layer.weight = v
-			self.losses = list(losses.keys())
-		self.optimizer = optimizer
+	def __compile(self):
 		for n in self.nodes.values():
 			# limpiamos las dependencias
 			n.clearForwardDependences()
@@ -136,6 +130,7 @@ class Network(object):
 		self.testHasOutputs()
 		self.testHasNotConnecteds()
 		self.testIsAcyclicGraph()
+		
 		# Habilitamos los tests en tiempo de ejecuccion
 		self.predict_flag = False
 
@@ -162,18 +157,40 @@ class Network(object):
 		self.metrics_monitoring = [0 for _ in self.metrics] #dict([(m.name, 0) for m in self.metrics])
 		self.iterations_monitoring = 0
 
-	def start(self, inputs, outputs):
+	def compile(self, inputs, outputs, losses, metrics = [], optimizer=SGD()):
+		self.metrics = metrics
+		# Calculamos los pesos de las losses
+		# si la entrada ha sido una lista los pesos de cada loss son equiprobables.
+		if isinstance(losses, list):
+			v = 1./len(losses)
+			for l in losses:
+				l.layer.weight = v
+			self.losses = losses
+
+		# si en cambio se ha introducido un diccionario del tipo {Loss1: 0.5, Loss2: 0.3, Loss3: 0.2}
+		elif isinstance(losses, dict):
+			for k, v in losses.items():
+				k.layer.weight = v
+			self.losses = list(losses.keys())
+		self.optimizer = optimizer
+		
+		# Compilamos la parte interna
+		self.__compile()
+
 		# Entradas y salidas de la red
 		self.inputs = inputs
-		
-		# todos los nodos que solo tengan salidas y no esten en inputs deberan tener el compute_forward_in_prediction = False
-		# Porque no participaran en la prediccion
-		for n in self.nodes_with_only_outputs.values():
-			if n not in self.inputs:
-				n.compute_forward_in_prediction = False
-		
 		self.outputs = outputs
 
+		# Empezamos
+		self.__start()
+
+	def recompile(self):
+		# Lo vuelve a inicializar todo
+		self.__compile()
+
+	"""
+		FORWARD / BACKPROPAGATION & TRAINING
+	"""
 	def forward(self):
 		# Recorremos los nodos que SOLO tienen salidas, es decir: Son la entrada de datos a la red.
 		for n in self.nodes_with_only_outputs.values():
@@ -181,14 +198,15 @@ class Network(object):
 			# Los tagets por ejemplo no se calculan.
 			if not self.predict_flag or n.compute_forward_in_prediction:
 				n.forward()
-		# indicamos que hemos realizado ya el forward
-		self.status = Network.STATUS.FORWARDED
+		# indicamos que hemos realizado ya el forward solo si estamos en modo no prediccion
+		if not self.predict_flag:
+			self.status = Network.STATUS.FORWARDED
 
 	def backpropagation(self):
 		# Si antes no se ha realizado un forward, debe hacerse.
 		if self.status == Network.STATUS.COMPILED:
 			self.forward()
-
+			
 		# Recorremos los nodos que SON LOSSES, es decir: Son la salida de datos a la red que determinan el error
 		for n in self.losses:
 			n.backpropagation(is_loss=True)
@@ -208,12 +226,97 @@ class Network(object):
 		self.backpropagation()
 		self.optimizer.iteration()
 
+
 		# accumulamos la monitorizacion
 		for k in range(len(self.losses_monitoring)):
 			self.losses_monitoring[k] += self.losses[k].temp_forward_result
 		for k in range(len(self.metrics_monitoring)):
 			self.metrics_monitoring[k] += self.metrics[k].temp_forward_result
 		self.iterations_monitoring += 1
+
+	def train(self, X, Y, epochs, batch_size, Xval=None, Yval=None, 
+		params={'shuffle': True, 'monitoring': True, 'monitor_iterations': None, 'train_iterations': None, 'val_iterations': None}):
+		has_params = params is not None and params and isinstance(params, dict)
+		
+		enable_monitoring = has_params and 'monitoring' in params and params['monitoring'] is not None
+		has_monitor_iterations = enable_monitoring and 'monitor_iterations' in params and params['monitor_iterations'] is not None
+		
+		enable_shuffle = has_params and 'shuffle' in params and params['shuffle']
+
+		data_size = list(X.values())[0].shape[0]
+		if has_params and 'train_iterations' in params and params['train_iterations'] is not None:
+			max_data_batch_index = min(data_size, batch_size*params['train_iterations'])
+		else:
+			max_data_batch_index = data_size
+
+		if Xval is not None:
+			data_size_val = list(Xval.values())[0].shape[0]
+
+			if has_params and 'val_iterations' in params and params['val_iterations'] is not None:
+				max_data_batch_index_val = min(data_size_val, batch_size*params['val_iterations'])
+			else:
+				max_data_batch_index_val = data_size_val
+		
+		indices = list(range(list(X.values())[0].shape[0]))
+		indices_val = list(range(list(Xval.values())[0].shape[0]))
+		for epoch in range(epochs):
+			# Shuffle
+			if enable_shuffle:
+				shuffle(indices)
+
+			self.__reset_monitoring()
+			# Train
+			batch_index = 0
+			iteration = 0
+			start_time = time.time()
+			while batch_index < max_data_batch_index:
+				start = batch_index
+				end = min(batch_index + batch_size, data_size)
+				X_batch = dict((k, v[indices[start:end]]) for k, v in X.items())
+				Y_batch = dict((k, v[indices[start:end]]) for k, v in Y.items())
+				
+				self.train_batch(X_batch, Y_batch)
+				
+				if (not has_monitor_iterations and enable_monitoring) or (has_monitor_iterations and iteration > 0 and (iteration + 1) % params['monitor_iterations'] == 0):
+					self.monitoring()
+					end_time = time.time()
+					print('=================================')
+					print('          TRAINING               ')
+					print(str(batch_index) + "/" + str(epoch))
+					print('-----'+ str(end_time - start_time) +'------')
+					start_time = end_time
+
+				batch_index += batch_size
+				iteration += 1
+
+			# Validation
+			if Xval is not None:
+				# Shuffle
+				if enable_shuffle:
+					shuffle(indices_val)
+
+				self.__reset_monitoring()
+				# Train
+				batch_index = 0
+				start_time = time.time()
+				while batch_index < max_data_batch_index_val:
+					start = batch_index
+					end = min(batch_index + batch_size, data_size_val)
+					X_batch = dict((k, v[indices_val[start:end]]) for k, v in Xval.items())
+					Y_batch = dict((k, v[indices_val[start:end]]) for k, v in Yval.items())
+					
+					self.validate_batch(X_batch, Y_batch)
+					
+					batch_index += batch_size
+
+				if enable_monitoring:
+					print('=================================')
+					print('          VALIDATION             ')
+					self.monitoring()
+					end_time = time.time()
+					print(str(batch_index) + "/" + str(epoch))
+					print('-----'+ str(end_time - start_time) +'------')
+
 
 	def predict(self, X):
 		self.predict_flag = True
@@ -227,22 +330,50 @@ class Network(object):
 		self.predict_flag = False
 		return dict([(n.label, n.temp_forward_result) for n in self.outputs])
 
-	def monitoring(self):
-		print('Losses:', dict([(self.losses[k].name, self.losses_monitoring[k] / self.iterations_monitoring) for k in range(len(self.losses_monitoring))]))
-		print('Metrics:', dict([(self.metrics[k].name, self.metrics_monitoring[k] / self.iterations_monitoring) for k in range(len(self.metrics_monitoring))]))
-		
-		# reseteamos la monitorizacion
+	def validate_batch(self, X, Y):
+		for xk, xv in X.items():
+			self.nodes_with_only_outputs[xk].fill(xv)
+		for yk, yv in Y.items():
+			self.nodes_with_only_outputs[yk].fill(yv)
+
+		# Comprovamos que hemos llenado todos los inputs
+		self.testAllInputsHaveData(only_no_targets=False)
+		# definimos el tipo tamano del batch
+		self.batch_size = self.inputs[0].batchSize()
+		self.forward()
+
+		# accumulamos la monitorizacion
+		for k in range(len(self.losses_monitoring)):
+			self.losses_monitoring[k] += self.losses[k].temp_forward_result
+		for k in range(len(self.metrics_monitoring)):
+			self.metrics_monitoring[k] += self.metrics[k].temp_forward_result
+		self.iterations_monitoring += 1
+
+		# Forzamos que tenga que hacer el forward el training
+		self.status = Network.STATUS.COMPILED
+
+	
+	"""
+		UTILES:
+			
+	"""
+	def __reset_monitoring(self):
 		self.iterations_monitoring = 0
 		for k in range(len(self.losses_monitoring)):
 			self.losses_monitoring[k] = 0
 		for k in range(len(self.metrics_monitoring)):
 			self.metrics_monitoring[k] = 0
 
+	def monitoring(self):
+		print('Losses:', dict([(self.losses[k].name, self.losses_monitoring[k] / self.iterations_monitoring) for k in range(len(self.losses_monitoring))]))
+		print('Metrics:', dict([(self.metrics[k].name, self.metrics_monitoring[k] / self.iterations_monitoring) for k in range(len(self.metrics_monitoring))]))
+		
+		# reseteamos la monitorizacion
+		self.__reset_monitoring()
 
 	def plot(self, filestr):
 		if self.status != Network.STATUS.COMPILED:
-			print('Para realizar un grafico, debe compilar la red.')
-			return
+			raise Exceptions.NotCompiledError('Para realizar un grafico, debe compilar la red.')
 
 		graph = pydot.Dot(graph_type='digraph')
 		graph.set_node_defaults(shape='none', fontname='Courier', fontsize='10')
@@ -273,6 +404,9 @@ class Network(object):
 
 	def get_weights(self, label):
 		return self.nodes[label].weights
+
+	def set(self, label, *args, **kargs):
+		return self.nodes[label].layer.set(*args, **kargs)
 
 	def save(self, filename):
 		if self.status == Network.STATUS.NOT_COMPILED:

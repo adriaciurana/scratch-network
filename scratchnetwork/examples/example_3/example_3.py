@@ -35,18 +35,15 @@ L1.addPrev(inputY)
 M1.addPrev(N3)
 M1.addPrev(inputY)
 
-net.compile(losses=[L1], metrics=[M1])
-net.start(inputs=[inputX], outputs=[N3])
+net.compile(inputs=[inputX], outputs=[N3], losses=[L1], metrics=[M1], optimizer=SGD(lr=0.1, clip_norm=1))
 net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
 
 # Llenamos
 a = 2*(np.random.rand(1000, 20, 20, 1) - 0.5)
 b = 5*net.predict({'Input': a})['Output']
+
 batch_size = 20
 batch_index = 0
-
-net.compile(losses=[L1], metrics=[M1], optimizer=SGD(lr=0.1, clip=1))
-net.start(inputs=[inputX], outputs=[N3])
 
 for i in range(10000):
 	Xaux = a[batch_index:(batch_index + batch_size)]

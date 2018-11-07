@@ -19,7 +19,7 @@ class SoftmaxCrossEntropy(Loss):
 		probs /= np.sum(probs, axis=-1, keepdims=True)
 		self.values.probs = probs
 		self.values.true = np.int64(true.flatten()) #np.argmax(true, axis=-1)
-		return -np.sum(np.log(probs[np.arange(self.values.true.shape[0]), self.values.true] + 1e-100)) / self.values.true.shape[0]	
+		return -np.mean(np.log(probs[np.arange(self.values.true.shape[0]), self.values.true] + 1e-100))
 		
 	def derivatives(self, doutput):
 		dx = self.values.probs.copy()

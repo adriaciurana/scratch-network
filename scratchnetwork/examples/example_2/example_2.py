@@ -31,8 +31,8 @@ L1.addPrev(inputY)
 M1.addPrev(B)
 M1.addPrev(inputY)
 
-optimizer=SGD(lr=1, mu=0, clip=1)
-net.compile(losses=[L1], metrics=[M1], optimizer=optimizer)
+optimizer=SGD(lr=1, mu=0, clip_norm=1)
+net.compile(inputs=[inputX], outputs=[B], losses=[L1], metrics=[M1], optimizer=optimizer)
 net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
 
 # Llenamos
@@ -48,8 +48,7 @@ w3 = np.outer(w3, w3)
 for f in [w1, w2, w3]:
 	a0 = time.time()
 	batch_index = 0
-	net.compile(losses=[L1], metrics=[M1], optimizer=optimizer)
-	net.start(inputs=[inputX], outputs=[B])
+	net.recompile()
 
 	f *= 3
 	ff = np.flipud(np.fliplr(f))

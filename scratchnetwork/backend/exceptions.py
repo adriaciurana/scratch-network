@@ -37,3 +37,7 @@ class Exceptions:
 	# Operation
 	class OperationNotExist(Exception):
 		pass
+
+	# Custom cannot compile without functions
+	class CustomNotCompile(Exception):
+		pass

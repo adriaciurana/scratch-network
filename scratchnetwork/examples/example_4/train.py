@@ -56,11 +56,10 @@ output = net.Node("Output", OneHotDecode)(FC2softmax)
 L1 = net.Node("Cross Entropy", SoftmaxCrossEntropy)(FC2, inputY)
 M1 = net.Node("Accuracy", Accuracy)(output, inputY)
 
-net.compile(losses=[L1], metrics=[M1], optimizer=AdaGrad(lr=1e-2, clip_norm=None))
-net.start(inputs=[inputX], outputs=[output])
+net.compile(inputs=[inputX], outputs=[output], losses=[L1], metrics=[M1], optimizer=AdaGrad(lr=1e-2, clip_norm=None))
 net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
 
-# Llenamos
+"""# Llenamos
 batch_index = 0
 batch_size = 128
 epoch = 0
@@ -79,5 +78,7 @@ for i in range(10000):
 	print(str(batch_index) + "/" + str(epoch))
 	print('-----'+ str(time.time() - t) +'------')
 	
-
+"""
+params = {'shuffle': True, 'monitoring': True, 'monitor_iterations': 5, 'train_iterations': 10, 'val_iterations': 5}
+net.train(X={'Input': images_train}, Y={'Label': labels_train}, epochs=10, batch_size=128, Xval={'Input': images_train}, Yval={'Label': labels_train}, params=params)
 print(net.save("example.h5"))

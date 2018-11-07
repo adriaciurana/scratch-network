@@ -31,8 +31,7 @@ L1.addPrev(inputY)
 M1.addPrev(C)
 M1.addPrev(inputY)
 
-net.compile(losses=[L1], metrics=[M1], optimizer=SGD(lr=0.1, clip=10))
-net.start(inputs=[inputX], outputs=[C])
+net.compile(inputs=[inputX], outputs=[C], losses=[L1], metrics=[M1], optimizer=SGD(lr=0.1, clip_norm=10))
 net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
 
 # Llenamos

@@ -103,14 +103,14 @@ class Node(object):
 		
 	def forward(self):
 		# Si esta en modo no prediccion el forward se para en la Loss
-		if self.network.predict_flag and not self.compute_forward_in_prediction:
-			return
-
-		#t = time.time()
+		#if self.network.predict_flag and not self.compute_forward_in_prediction:
+		# 	return
 		result = self.computeForward()
-		#print('F: ',self.name, time.time() - t)
 		self.temp_forward_result = result
 		for n in self.nexts:
+			if self.network.predict_flag and not n.compute_forward_in_prediction:
+				continue
+
 			n.incrementForwardDependences()
 			# Solo se podra ejecutar si todas las dependencias han terminado de calcularse.
 			if n.checkForwardDependences():

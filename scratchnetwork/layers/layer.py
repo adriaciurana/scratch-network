@@ -234,3 +234,6 @@ class Layer(object):
 		obj.out_size_flatten = data['attributes']['sizes']['out_size_flatten']
 		obj.load(data, h5_container)
 		return obj
+
+	def set(self, *args, **kwargs):
+		raise Exceptions.LayerWithoutSet("La capa "+self.__class__.__class__+ "(" + self.node.name + ") no tiene el metodo set")

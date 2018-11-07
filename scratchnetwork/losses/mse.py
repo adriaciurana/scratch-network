@@ -3,8 +3,7 @@ import numpy as np
 class MSE(Loss):
 	def __init__(self, node, params=None):
 		if params is None:
-			params = {}
-			
+			params = {}		
 		super(MSE, self).__init__(node, params=params)
 		
 	def forward(self, inputs):

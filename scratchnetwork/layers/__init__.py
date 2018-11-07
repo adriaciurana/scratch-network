@@ -12,3 +12,5 @@ from .flatten import Flatten
 from .onehotdecode import OneHotDecode
 from .concat import Concat
 from .operation import Operation
+from .reshape import Reshape
+from .custom import Custom
