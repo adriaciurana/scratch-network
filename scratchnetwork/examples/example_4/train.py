@@ -86,5 +86,5 @@ params = {
 		'validation': 5,
 	}
 }
-net.train(X={'Input': images_train}, Y={'Label': labels_train}, epochs=10, batch_size=128, Xval={'Input': images_train}, Yval={'Label': labels_train}, params=params)
-print(net.save("example.h5"))
+net.fit(X={'Input': images_train}, Y={'Label': labels_train}, epochs=10, batch_size=128, Xval={'Input': images_train}, Yval={'Label': labels_train}, params=params)
+net.save("example.h5", freeze=True)

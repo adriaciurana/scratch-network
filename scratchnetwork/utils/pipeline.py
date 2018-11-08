@@ -14,19 +14,19 @@ class Pipeline(object):
 			raise Exceptions.PipelineInputAndOutputFunction("Error, la funcion debe devolver los nodos de la entrada y la salida.")
 
 		self.input, self.output = aux
-		self.copies = 0
+		self.num_copies = 0
 
 	def copy(self, name=None, reuse=False):
 		if name is None:
 			name = self.name
-		self.copies += 1
+		self.num_copies += 1
 
 		relations = {}
 		node_table = {}
 		for n in self.subnet.nodes.values():
 			if reuse:
 				n.network = self.network
-			node = n.copy(copy_layer=not reuse, name_prepend=name + '_' + str(self.copies) + "_", network=self.network)
+			node = n.copy(copy_layer=not reuse, name_prepend=name + '/' + str(self.num_copies) + '/', network=self.network)
 			node.reuse = reuse
 			node.pipeline_name = self.name
 			if n == self.input:

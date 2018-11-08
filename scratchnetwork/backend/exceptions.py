@@ -27,6 +27,8 @@ class Exceptions:
 		pass
 	class NotCompiledError(Exception):
 		pass
+	class NetworkAreFreezeModel(Exception):
+		pass
 
 	# Pipeline
 	class PipelineInputAndOutputFunction(Exception):

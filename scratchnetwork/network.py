@@ -2,6 +2,7 @@ import h5py, json, pydot, copy, time, math
 import numpy as np
 from .node import Node
 from .layers.layer import Layer
+from .layers.avoidfreeze import AvoidFreeze
 from .optimizers import SGD
 from .optimizers.optimizer import Optimizer
 from .backend.exceptions import Exceptions
@@ -10,17 +11,17 @@ from .utils.prettyresults import PrettyResults
 from .utils.prettymonitor import PrettyMonitor
 from random import shuffle
 
-
 class Network(object):
 	# Posibles estados de la red
 	class STATUS(object):
-		NOT_COMPILED, COMPILED, FORWARDED = range(3)
+		NOT_COMPILED, COMPILED, FREEZE = range(3)
 
+	# Posibles conjuntos en los que se esta trabajando
 	class SPLIT(object):
 		TRAINING, VALIDATION = range(2)
 	
 	def __init__(self):
-		self.status = Network.STATUS.NOT_COMPILED
+		self.status = self.STATUS.NOT_COMPILED
 		self.predict_flag = False
 		
 		# Nodos
@@ -62,19 +63,19 @@ class Network(object):
 		COMPILE:
 			Genera e inicializa las estructuras de datos para ejecutar la red.
 	"""
-	def testHasInputs(self):
+	def __testHasInputs(self):
 		if len(self.nodes_with_only_outputs) == 0:
 			raise Exceptions.NotInputException("¡El grafo no tiene entrada!"+str([n for n in self.nodes_with_only_outputs]))
 	
-	def testHasOutputs(self):
+	def __testHasOutputs(self):
 		if len(self.nodes_with_only_inputs) == 0:
 			raise Exceptions.NotOutputException("¡El grafo no tiene salida!"+str([n for n in self.nodes_with_only_inputs]))
 
-	def testHasNotConnecteds(self):
+	def __testHasNotConnecteds(self):
 		if len(self.nodes_not_connected) > 0:
 			raise Exceptions.NotConnectedException("¡Existen nodos sin conectar! "+str([n for n in self.nodes_not_connected]))
 	
-	def testIsAcyclicGraph(self):
+	def __testIsAcyclicGraph(self):
 		# definimos una estructura para saber el camino recorrido
 		path_nodes = []
 
@@ -96,18 +97,19 @@ class Network(object):
 			# empezamos a recorrer
 			exploreNode(n)
 
-	def testAllInputsHaveData(self, only_no_targets=False):
+	def __testAllInputsHaveData(self, only_no_targets=False):
 		check = True
 		for n in self.nodes_with_only_outputs.values():
 			check &= (not only_no_targets and n.layer.has_data) or (n.compute_forward_in_prediction and n.layer.has_data)
 			#(n.layer.has_data or (only_no_targets and not n.compute_forward_in_prediction))
 
-	def computeSizes(self):
-		for n in self.nodes.values():
-			n.clearSizesResults()
-		# Calculamos por cada nodo su tamaño
-		for n in self.nodes_with_only_outputs.values():
-			n.computeSize()
+	def __testNetworkHasNotCompiled(self):
+		if self.status == self.STATUS.NOT_COMPILED:
+			raise Exceptions.NotCompiledError("La red aun no ha sido compilada.")
+
+	def __testFreezeModel(self):
+		if self.status == self.STATUS.FREEZE:
+			raise Exceptions.NetworkAreFreezeModel("La red es un modelo congelado.")
 
 	def __start(self):
 		# iniciamos
@@ -132,10 +134,10 @@ class Network(object):
 			n.determineNode()
 
 		# Realizamos los tests
-		self.testHasInputs()
-		self.testHasOutputs()
-		self.testHasNotConnecteds()
-		self.testIsAcyclicGraph()
+		self.__testHasInputs()
+		self.__testHasOutputs()
+		self.__testHasNotConnecteds()
+		self.__testIsAcyclicGraph()
 		
 		# Habilitamos los tests en tiempo de ejecuccion
 		self.predict_flag = False
@@ -156,9 +158,10 @@ class Network(object):
 			n.computeNumberOfBackwardNodes()
 
 		# cambiamos estado
-		self.status = Network.STATUS.COMPILED
+		self.status = self.STATUS.COMPILED
 
 	def compile(self, inputs, outputs, losses, metrics = [], optimizer=SGD()):
+		self.__testFreezeModel()
 		self.metrics = metrics
 		# Calculamos los pesos de las losses
 		# si la entrada ha sido una lista los pesos de cada loss son equiprobables.
@@ -186,57 +189,67 @@ class Network(object):
 		self.__start()
 
 	def recompile(self):
+		self.__testFreezeModel()
+		self.__testNetworkHasNotCompiled()
+
 		# Lo vuelve a inicializar todo
 		self.__compile()
 
 	"""
 		FORWARD / BACKPROPAGATION & TRAINING
 	"""
-	def forward(self):
+	def __forward(self):
 		# Recorremos los nodos que SOLO tienen salidas, es decir: Son la entrada de datos a la red.
 		for n in self.nodes_with_only_outputs.values():
 			# Solo se realiza el forward para elementos que participan en la preciccion.
 			# Los tagets por ejemplo no se calculan.
 			if not self.predict_flag or n.compute_forward_in_prediction:
 				n.forward()
-		# indicamos que hemos realizado ya el forward solo si estamos en modo no prediccion
-		if not self.predict_flag:
-			self.status = Network.STATUS.FORWARDED
 
-	def backpropagation(self):
-		# Si antes no se ha realizado un forward, debe hacerse.
-		if self.status == Network.STATUS.COMPILED:
-			self.forward()
+	def __backpropagation(self):
+		self.__forward()
 			
 		# Recorremos los nodos que SON LOSSES, es decir: Son la salida de datos a la red que determinan el error
 		for n in self.losses:
 			n.backpropagation(is_loss=True)
-		self.status = Network.STATUS.COMPILED
+
+		self.optimizer.iteration()
 
 	def train_batch(self, X, Y):
+		self.__testFreezeModel()
+		self.__testNetworkHasNotCompiled()
+
 		for xk, xv in X.items():
 			self.nodes_with_only_outputs[xk].fill(xv)
 		for yk, yv in Y.items():
 			self.nodes_with_only_outputs[yk].fill(yv)
 
 		# Comprovamos que hemos llenado todos los inputs
-		self.testAllInputsHaveData(only_no_targets=False)
+		self.__testAllInputsHaveData(only_no_targets=False)
 		# definimos el tipo tamano del batch
 		self.batch_size = self.inputs[0].batchSize()
 		
-		self.backpropagation()
-		self.optimizer.iteration()
+		self.__backpropagation()
 
-	def train(self, X, Y, epochs, batch_size, Xval=None, Yval=None, 
-		params={
-			'shuffle': True,
-			'iterations': {
-				'training': None,
-				'validation': None
-			},
-		},
-		callbacks=None):
-		
+	def validate_batch(self, X, Y):
+		self.__testFreezeModel()
+		self.__testNetworkHasNotCompiled()
+
+		for xk, xv in X.items():
+			self.nodes_with_only_outputs[xk].fill(xv)
+		for yk, yv in Y.items():
+			self.nodes_with_only_outputs[yk].fill(yv)
+
+		# Comprovamos que hemos llenado todos los inputs
+		self.__testAllInputsHaveData(only_no_targets=False)
+		# definimos el tipo tamano del batch
+		self.batch_size = self.inputs[0].batchSize()
+		self.__forward()
+
+	def fit(self, X, Y, epochs, batch_size, Xval=None, Yval=None, params={'shuffle': True, 'iterations': {'training': None, 'validation': None}}, callbacks=None):
+		self.__testFreezeModel()
+		self.__testNetworkHasNotCompiled()
+
 		# Iniciamos los callbacks
 		if callbacks is None:
 			callbacks = [PrettyMonitor(PrettyMonitor.TRAINING, 5), PrettyMonitor(PrettyMonitor.VALIDATION)]
@@ -299,7 +312,7 @@ class Network(object):
 
 				# Ejecutamos callbacks
 				for c in callbacks:
-					c.excecute_pre_batch(Network.SPLIT.TRAINING, iteration, total_iterations, batch_index, total_batchs, batch_size, epoch, total_epochs)
+					c.excecute_pre_batch(self.SPLIT.TRAINING, iteration, total_iterations, batch_index, total_batchs, batch_size, epoch, total_epochs)
 				
 				# Entrenamos con ese batch
 				self.train_batch(X_batch, Y_batch)
@@ -307,7 +320,7 @@ class Network(object):
 				# Ejecutamos callbacks
 				end_time = time.time()
 				for c in callbacks:
-					c.excecute_post_batch(Network.SPLIT.TRAINING, iteration, total_iterations, batch_index, total_batchs, batch_size, epoch, total_epochs, end_time - start_time)
+					c.excecute_post_batch(self.SPLIT.TRAINING, iteration, total_iterations, batch_index, total_batchs, batch_size, epoch, total_epochs, end_time - start_time)
 				iteration += 1
 				
 			# VALIDATION
@@ -335,7 +348,7 @@ class Network(object):
 
 					# Ejecutamos callbacks
 					for c in callbacks:
-						c.excecute_pre_batch(Network.SPLIT.VALIDATION, iteration, total_iterations_val, batch_index, total_batchs_val, batch_size, epoch, total_epochs)
+						c.excecute_pre_batch(self.SPLIT.VALIDATION, iteration, total_iterations_val, batch_index, total_batchs_val, batch_size, epoch, total_epochs)
 					
 					# Entrenamos con ese batch
 					self.validate_batch(X_batch, Y_batch)
@@ -343,48 +356,40 @@ class Network(object):
 					# Ejecutamos callbacks
 					end_time = time.time()
 					for c in callbacks:
-						c.excecute_post_batch(Network.SPLIT.VALIDATION, iteration, total_iterations_val, batch_index, total_batchs_val, batch_size, epoch, total_epochs, end_time - start_time)
+						c.excecute_post_batch(self.SPLIT.VALIDATION, iteration, total_iterations_val, batch_index, total_batchs_val, batch_size, epoch, total_epochs, end_time - start_time)
 					iteration += 1
 
 	def predict(self, X):
+		self.__testNetworkHasNotCompiled()
+
 		self.predict_flag = True
+		
 		for xk, xv in X.items():
 			if self.nodes_with_only_outputs[xk].compute_forward_in_prediction:
 				self.nodes_with_only_outputs[xk].fill(xv)
-		self.testAllInputsHaveData(only_no_targets=True)
+		self.__testAllInputsHaveData(only_no_targets=True)
+		
 		# definimos el tipo tamano del batch
 		self.batch_size = self.inputs[0].batchSize()
-		self.forward()
+		self.__forward()
+		
 		self.predict_flag = False
+		
 		return dict([(n.label, n.temp_forward_result) for n in self.outputs])
 
-	def validate_batch(self, X, Y):
-		for xk, xv in X.items():
-			self.nodes_with_only_outputs[xk].fill(xv)
-		for yk, yv in Y.items():
-			self.nodes_with_only_outputs[yk].fill(yv)
-
-		# Comprovamos que hemos llenado todos los inputs
-		self.testAllInputsHaveData(only_no_targets=False)
-		# definimos el tipo tamano del batch
-		self.batch_size = self.inputs[0].batchSize()
-		self.forward()
-
-		# Forzamos que tenga que hacer el forward el training
-		self.status = Network.STATUS.COMPILED
-
-	
 	"""
 		UTILES:
 			
 	"""
 	def monitoring(self):
+		self.__testFreezeModel()
+		self.__testNetworkHasNotCompiled()
+
 		print('Losses:', dict([(l.name, l.temp_forward_result) for l in self.losses]))
 		print('Metrics:', dict([(m.name, m.temp_forward_result) for m in self.metrics]))
 
 	def plot(self, filestr):
-		if self.status != Network.STATUS.COMPILED:
-			raise Exceptions.NotCompiledError('Para realizar un grafico, debe compilar la red.')
+		self.__testNetworkHasNotCompiled()
 
 		graph = pydot.Dot(graph_type='digraph')
 		graph.set_node_defaults(shape='none', fontname='Courier', fontsize='10')
@@ -414,54 +419,78 @@ class Network(object):
 		graph.write_png(filestr)
 
 	def get_weights(self, label):
+		self.__testNetworkHasNotCompiled()
+		
 		return self.nodes[label].weights
 
-	def set(self, label, *args, **kargs):
+	def set_layer(self, label, *args, **kargs):
+		self.__testNetworkHasNotCompiled()
+
 		return self.nodes[label].layer.set(*args, **kargs)
 
-	def save(self, filename):
-		if self.status == Network.STATUS.NOT_COMPILED:
-			raise Exceptions.NotCompiledError("La red aun no ha sido compilada.")
+	def save(self, filename, freeze=False):
+		self.__testNetworkHasNotCompiled()
 
+		# Definimos el freeze model
+		freeze_model = freeze or self.status == self.STATUS.FREEZE
+		
+		# Creamos la libreria hf
 		hf = h5py.File(filename, 'w')
 		nodes_h5 = hf.create_group('nodes')
 
-		# NODES
+		# Nodos
 		nodes_json = {}
 		nodes_id_dict = {}
 		id_nodes_dict = {}
 		for i, n in enumerate(self.nodes.values()):
-			nodes_id_dict[i] = n
-			id_nodes_dict[n] = i
-			nodes_json[i] = n.save(nodes_h5.create_group(str(i)))
+			if not freeze_model or not isinstance(n.layer, AvoidFreeze):
+				nodes_id_dict[i] = n
+				id_nodes_dict[n] = i
+				nodes_json[i] = n.save(nodes_h5.create_group(str(i)))
 
-		# RELATIONS
+		# Relaciones (se almacenan como un diccionario)
 		relations_json = {}
 		for i, n in nodes_id_dict.items():
-			relations_json[i] = []
-			for nn in n.nexts:
-				j = id_nodes_dict[nn]
-				relations_json[i].append(j)
+			if not freeze_model or not isinstance(n.layer, AvoidFreeze):
+				relations_json[i] = []
+				for nn in n.nexts:
+					if not freeze_model or not isinstance(nn.layer, AvoidFreeze):
+						j = id_nodes_dict[nn]
+						relations_json[i].append(j)
 
-		# LOSSES
-		losses_json = [id_nodes_dict[n] for n in self.losses]
+		# Inputs
+		inputs_json = []
+		for n in self.inputs:
+			if not freeze_model or not isinstance(n.layer, AvoidFreeze):
+				inputs_json.append(id_nodes_dict[n])
+
+		# Outputs
+		outputs_json = []
+		for n in self.outputs:
+			if not freeze_model or not isinstance(n.layer, AvoidFreeze):
+				outputs_json.append(id_nodes_dict[n])
 		
-		# METRICS
-		metrics_json = [id_nodes_dict[n] for n in self.metrics]
-
-		# OPTIMIZER
-		optimizer_json = self.optimizer.save(hf.create_group("optimizer"))
-
-		# JSON
-		network_json = \
-		{'status': self.status,
-		'inputs': [id_nodes_dict[n] for n in self.inputs],
-		'outputs': [id_nodes_dict[n] for n in self.outputs],
-		'losses': losses_json,
-		'metrics': metrics_json,
-		'nodes': nodes_json,
-		'relations': relations_json,
-		'optimizer': optimizer_json}
+		# Json
+		network_json = {
+		'status': self.status,
+			'inputs': inputs_json,
+			'outputs': outputs_json,
+			'nodes': nodes_json,
+			'relations': relations_json,
+			'freeze_model': freeze_model
+		}
+		if not freeze_model:
+			# Losses
+			losses_json = [id_nodes_dict[n] for n in self.losses]
+			
+			# Metricas
+			metrics_json = [id_nodes_dict[n] for n in self.metrics]
+			
+			# Optimizador
+			optimizer_json = self.optimizer.save(hf.create_group("optimizer"))
+			network_json['losses'] = losses_json
+			network_json['metrics'] = metrics_json
+			network_json['optimizer'] = optimizer_json		
 		
 		hf.create_dataset("data", data=json.dumps(network_json))
 		hf.close()
@@ -501,27 +530,33 @@ class Network(object):
 		# IN & OUT
 		self.inputs = [id_nodes_dict[i] for i in data['inputs']]
 		self.outputs = [id_nodes_dict[i] for i in data['outputs']]
+		if data['freeze_model']:
+			self.status = self.STATUS.FREEZE
+		else:
+			# LOSSES
+			self.losses = [id_nodes_dict[i] for i in data['losses']]
 
-		# LOSSES
-		self.losses = [id_nodes_dict[i] for i in data['losses']]
-		for l in self.losses:
-			l.hasToComputeBackward()
+			# METRICS
+			self.metrics = [id_nodes_dict[i] for i in data['metrics']]
 
-		# Despues de cargar las losses
-		for n in self.nodes.values(): # se dene ejecutar una vez compilados
-			n.computeNumberOfBackwardNodes()
+			# OPTIMIZER
+			self.optimizer = Optimizer.load_static(data['optimizer'], hf['optimizer'])
 
-		for n in self.nodes_with_only_outputs.values():
-			if n not in self.inputs:
-				n.compute_forward_in_prediction = False
+			# Seteamos lo que necesitemos
+			for l in self.losses:
+				l.hasToComputeBackward()
 
-		# METRICS
-		self.metrics = [id_nodes_dict[i] for i in data['metrics']]
+			# Despues de cargar las losses
+			for n in self.nodes.values(): # se debe ejecutar una vez compilados
+				n.computeNumberOfBackwardNodes()
 
+			for n in self.nodes_with_only_outputs.values():
+				if n not in self.inputs:
+					n.compute_forward_in_prediction = False
 
-		# OPTIMIZER
-		self.optimizer = Optimizer.load_static(data['optimizer'], hf['optimizer'])
+			self.status = self.STATUS.COMPILED
 
+		# Cerramos hf
 		hf.close()
 
 

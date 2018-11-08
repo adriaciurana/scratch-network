@@ -272,13 +272,13 @@ class Node(object):
 		else:
 			layer = self.layer 
 
-		if isinstance(name_prepend, str):
+		if name_prepend is not None: #isinstance(name_prepend, str):
 			name = name_prepend + self.name
 			label = name_prepend + self.label
 
 		else:
-			name = self.name+'_'+copy_node_instance.layer.LAYER_COUNTER
-			label = name_prepend + self.label+'_'+copy_node_instance.layer.LAYER_COUNTER
+			name = self.name + '_' + copy_node_instance.layer.LAYER_COUNTER
+			label = self.label + '_' + copy_node_instance.layer.LAYER_COUNTER
 
 		if network is None:
 			network = self.network
@@ -305,14 +305,11 @@ class Node(object):
 	"""
 	def save(self, h5_container):
 		layer_json = self.layer.save(h5_container.create_group("layer"))
-		
-		return \
-		{'label': self.label,
-		'name': self.name,
-		'layer': layer_json}
-
-		"""'compute_forward_in_prediction': self.compute_forward_in_prediction,
-		'compute_backward': self.compute_backward,"""
+		return {
+			'label': self.label,
+			'name': self.name,
+			'layer': layer_json
+		}
 
 	@staticmethod
 	def load_static(network, data, h5_container):

@@ -9,17 +9,12 @@ from scratchnetwork import Network
 
 # MNIST LOAD
 from mnist import MNIST
-mndata = MNIST('dataset/data')
-#images_train, labels_train = mndata.load_training()
-#images_train, labels_train = np.reshape(np.array(images_train), [-1, 28, 28]), np.array(labels_train)
+mndata = MNIST('../datasets/mnist/data')
 images_test, labels_test = mndata.load_testing()
 images_test, labels_test = np.reshape(np.array(images_test), [-1, 28, 28]), np.array(labels_test)
 
-#images_train = (np.array(np.expand_dims(images_train, axis=-1), dtype=np.float64) - 128)/128
-#labels_train = np.array([[float(m == b) for m in range(10)] for b in labels_train], dtype=np.float64)
-images_test = ((np.array(np.expand_dims(images_test, axis=-1), dtype=np.float64) - 128)/128)[:10]
-labels_test = np.array(labels_test, dtype=np.int32).reshape(-1, 1)[:10]
-print(images_test.shape)
+images_test = (np.array(np.expand_dims(images_test, axis=-1), dtype=np.float64) - 128)/128
+labels_test = np.array(labels_test, dtype=np.int32).reshape(-1, 1)
 
 net = Network()
 # DESCARGAR LOS PESOS EN: https://drive.google.com/file/d/1DeewIZLeeEUqVIsWrcPwc1Y3zr7eFUDA/view?usp=sharing
@@ -38,7 +33,7 @@ Confusion Matrix:
  [   8    6    2   17   12   12    0   10    0  942]]
 """
 net.load('example.h5')
-
+net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
 out = net.predict({'Input': images_test})
 import matplotlib.pylab as plt
 from random import shuffle

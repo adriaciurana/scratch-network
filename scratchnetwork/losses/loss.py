@@ -1,6 +1,6 @@
-from ..layers.layer import Layer
+from ..layers.avoidfreeze import AvoidFreeze
 import numpy as np
-class Loss(Layer):
+class Loss(AvoidFreeze):
 	def __init__(self, node, params=None):
 		if params is None:
 			params = {}
