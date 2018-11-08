@@ -1,8 +1,5 @@
-import sys
-import os
+import sys, os, time, h5py
 import numpy as np
-import time
-import h5py
 
 sys.path.append(os.path.dirname(__file__)+"../../../")
 from scratchnetwork import Network
@@ -19,18 +16,18 @@ labels_test = np.array(labels_test, dtype=np.int32).reshape(-1, 1)
 net = Network()
 # DESCARGAR LOS PESOS EN: https://drive.google.com/file/d/1DeewIZLeeEUqVIsWrcPwc1Y3zr7eFUDA/view?usp=sharing
 """
-accuracy: 0.9572
+Accuracy: 0.9903
 Confusion Matrix:
-[[ 972    0    1    0    0    1    4    1    1    0]
- [   0 1115    7    3    1    0    8    0    1    0]
- [  10    1  998   11    3    0    2    6    1    0]
- [   1    0    8  977    0   13    0    9    1    1]
- [   2    0    1    0  954    0    8    0    1   16]
- [   5    0    0    9    0  868    9    0    0    1]
- [  11    1    0    0    4    2  940    0    0    0]
- [   2    3   25    4    3    0    0  981    1    9]
- [  36    2   24   14    3   24   15   11  825   20]
- [   8    6    2   17   12   12    0   10    0  942]]
+[[ 976    0    0    0    0    0    2    1    1    0]
+ [   0 1130    2    1    0    1    1    0    0    0]
+ [   2    1 1023    0    1    0    0    5    0    0]
+ [   1    0    1 1001    0    2    0    3    2    0]
+ [   0    0    0    0  973    0    1    0    2    6]
+ [   2    0    0    3    0  884    2    0    0    1]
+ [   6    3    0    0    1    1  947    0    0    0]
+ [   0    1    3    2    1    0    0 1018    2    1]
+ [   3    1    2    2    0    0    0    2  962    2]
+ [   2    1    0    3    3    4    0    6    1  989]]
 """
 net.load('example.h5')
 net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
@@ -44,9 +41,10 @@ for i in rrand:
 
 	# plot
 	plt.title("number: "+str(o))
-	plt.imshow(images_test[i][:,:,0])
-	plt.colorbar()
-	plt.show()
+	plt.imshow(images_test[i][:,:,0], cmap='gray')
+	plt.show(block = False)
+	while plt.waitforbuttonpress() is None:
+		pass
 
 np.set_printoptions(threshold=np.nan)
 a = out['Output']
