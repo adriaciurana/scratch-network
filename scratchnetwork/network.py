@@ -1,4 +1,4 @@
-import h5py, json, pydot, copy, time
+import h5py, json, pydot, copy, time, math
 import numpy as np
 from .node import Node
 from .layers.layer import Layer
@@ -6,12 +6,18 @@ from .optimizers import SGD
 from .optimizers.optimizer import Optimizer
 from .backend.exceptions import Exceptions
 from .utils.pipeline import Pipeline
+from .utils.prettyresults import PrettyResults
+from .utils.prettymonitor import PrettyMonitor
 from random import shuffle
+
 
 class Network(object):
 	# Posibles estados de la red
 	class STATUS(object):
 		NOT_COMPILED, COMPILED, FORWARDED = range(3)
+
+	class SPLIT(object):
+		TRAINING, VALIDATION = range(2)
 	
 	def __init__(self):
 		self.status = Network.STATUS.NOT_COMPILED
@@ -152,11 +158,6 @@ class Network(object):
 		# cambiamos estado
 		self.status = Network.STATUS.COMPILED
 
-		# Iniciamos los diccionarios de monitoreo
-		self.losses_monitoring = [0 for _ in self.losses] #dict([(l.name, 0) for l in self.losses])
-		self.metrics_monitoring = [0 for _ in self.metrics] #dict([(m.name, 0) for m in self.metrics])
-		self.iterations_monitoring = 0
-
 	def compile(self, inputs, outputs, losses, metrics = [], optimizer=SGD()):
 		self.metrics = metrics
 		# Calculamos los pesos de las losses
@@ -226,97 +227,124 @@ class Network(object):
 		self.backpropagation()
 		self.optimizer.iteration()
 
-
-		# accumulamos la monitorizacion
-		for k in range(len(self.losses_monitoring)):
-			self.losses_monitoring[k] += self.losses[k].temp_forward_result
-		for k in range(len(self.metrics_monitoring)):
-			self.metrics_monitoring[k] += self.metrics[k].temp_forward_result
-		self.iterations_monitoring += 1
-
 	def train(self, X, Y, epochs, batch_size, Xval=None, Yval=None, 
-		params={'shuffle': True, 'monitoring': True, 'monitor_iterations': None, 'train_iterations': None, 'val_iterations': None}):
+		params={
+			'shuffle': True,
+			'iterations': {
+				'training': None,
+				'validation': None
+			},
+		},
+		callbacks=None):
+		
+		# Iniciamos los callbacks
+		if callbacks is None:
+			callbacks = [PrettyMonitor(PrettyMonitor.TRAINING, 5), PrettyMonitor(PrettyMonitor.VALIDATION)]
+		for c in callbacks:
+			c.init(self)
+
+		# Redefinimos epochs
+		total_epochs = epochs
+
+		# Flags para los parametros
 		has_params = params is not None and params and isinstance(params, dict)
-		
-		enable_monitoring = has_params and 'monitoring' in params and params['monitoring'] is not None
-		has_monitor_iterations = enable_monitoring and 'monitor_iterations' in params and params['monitor_iterations'] is not None
-		
 		enable_shuffle = has_params and 'shuffle' in params and params['shuffle']
+		enable_validation = Xval is not None and Yval is not None
 
-		data_size = list(X.values())[0].shape[0]
-		if has_params and 'train_iterations' in params and params['train_iterations'] is not None:
-			max_data_batch_index = min(data_size, batch_size*params['train_iterations'])
-		else:
-			max_data_batch_index = data_size
+		# Definimos el numero de iteraciones maximas por el training
+		total_batchs = list(X.values())[0].shape[0]
+		if has_params and 'iterations' in params and \
+			'training' in params['iterations'] and \
+			params['iterations']['training'] is not None:
+			total_batchs = min(total_batchs, batch_size*params['iterations']['training'])
+		total_iterations = math.ceil(total_batchs / batch_size)
 
-		if Xval is not None:
-			data_size_val = list(Xval.values())[0].shape[0]
+		# Definimos el numero de iteraciones maximas por el validation (si existe)
+		if enable_validation:
+			total_batchs_val = list(Xval.values())[0].shape[0]
 
-			if has_params and 'val_iterations' in params and params['val_iterations'] is not None:
-				max_data_batch_index_val = min(data_size_val, batch_size*params['val_iterations'])
-			else:
-				max_data_batch_index_val = data_size_val
+			if has_params and 'iterations' in params and \
+				'validation' in params['iterations'] and \
+				params['iterations']['validation'] is not None:
+				total_batchs_val = min(total_batchs_val, batch_size*params['iterations']['validation'])
+			total_iterations_val = math.ceil(total_batchs_val / batch_size)
 		
+		# Definimos los indices para realizar un shuffle de forma rapida
 		indices = list(range(list(X.values())[0].shape[0]))
-		indices_val = list(range(list(Xval.values())[0].shape[0]))
-		for epoch in range(epochs):
-			# Shuffle
+		if enable_validation:
+			indices_val = list(range(list(Xval.values())[0].shape[0]))
+		
+		# Empezamos las epocas
+		for epoch in range(total_epochs):
+			# TRAINING
+			#
+			#
+			# Aplicamos el shuffle
 			if enable_shuffle:
 				shuffle(indices)
 
-			self.__reset_monitoring()
-			# Train
+			# Iniciamos la variables para training
 			batch_index = 0
 			iteration = 0
-			start_time = time.time()
-			while batch_index < max_data_batch_index:
+			# Empezamos las iteraciones
+			for batch_index in range(0, total_batchs, batch_size):
+				start_time = time.time()
+				# Definimos los intervalos del batch
 				start = batch_index
-				end = min(batch_index + batch_size, data_size)
+				end = min(batch_index + batch_size, total_batchs)
+
+				# Cargamos el batch
 				X_batch = dict((k, v[indices[start:end]]) for k, v in X.items())
 				Y_batch = dict((k, v[indices[start:end]]) for k, v in Y.items())
+
+				# Ejecutamos callbacks
+				for c in callbacks:
+					c.excecute_pre_batch(Network.SPLIT.TRAINING, iteration, total_iterations, batch_index, total_batchs, batch_size, epoch, total_epochs)
 				
+				# Entrenamos con ese batch
 				self.train_batch(X_batch, Y_batch)
 				
-				if (not has_monitor_iterations and enable_monitoring) or (has_monitor_iterations and iteration > 0 and (iteration + 1) % params['monitor_iterations'] == 0):
-					self.monitoring()
-					end_time = time.time()
-					print('=================================')
-					print('          TRAINING               ')
-					print(str(batch_index) + "/" + str(epoch))
-					print('-----'+ str(end_time - start_time) +'------')
-					start_time = end_time
-
-				batch_index += batch_size
+				# Ejecutamos callbacks
+				end_time = time.time()
+				for c in callbacks:
+					c.excecute_post_batch(Network.SPLIT.TRAINING, iteration, total_iterations, batch_index, total_batchs, batch_size, epoch, total_epochs, end_time - start_time)
 				iteration += 1
-
-			# Validation
-			if Xval is not None:
-				# Shuffle
+				
+			# VALIDATION
+			#
+			#
+			# Comprobamos si hay que realizar validation
+			if enable_validation:
+				# Aplicamos el shuffle
 				if enable_shuffle:
 					shuffle(indices_val)
-
-				self.__reset_monitoring()
-				# Train
+				
+				# Iniciamos la variables para training
 				batch_index = 0
-				start_time = time.time()
-				while batch_index < max_data_batch_index_val:
+				iteration = 0
+				# Empezamos las iteraciones
+				for batch_index in range(0, total_batchs_val, batch_size):
+					start_time = time.time()
+					# Definimos los intervalos del batch
 					start = batch_index
-					end = min(batch_index + batch_size, data_size_val)
-					X_batch = dict((k, v[indices_val[start:end]]) for k, v in Xval.items())
-					Y_batch = dict((k, v[indices_val[start:end]]) for k, v in Yval.items())
+					end = min(batch_index + batch_size, total_batchs)
+
+					# Cargamos el batch
+					X_batch = dict((k, v[indices[start:end]]) for k, v in X.items())
+					Y_batch = dict((k, v[indices[start:end]]) for k, v in Y.items())
+
+					# Ejecutamos callbacks
+					for c in callbacks:
+						c.excecute_pre_batch(Network.SPLIT.VALIDATION, iteration, total_iterations_val, batch_index, total_batchs_val, batch_size, epoch, total_epochs)
 					
+					# Entrenamos con ese batch
 					self.validate_batch(X_batch, Y_batch)
-					
-					batch_index += batch_size
 
-				if enable_monitoring:
-					print('=================================')
-					print('          VALIDATION             ')
-					self.monitoring()
+					# Ejecutamos callbacks
 					end_time = time.time()
-					print(str(batch_index) + "/" + str(epoch))
-					print('-----'+ str(end_time - start_time) +'------')
-
+					for c in callbacks:
+						c.excecute_post_batch(Network.SPLIT.VALIDATION, iteration, total_iterations_val, batch_index, total_batchs_val, batch_size, epoch, total_epochs, end_time - start_time)
+					iteration += 1
 
 	def predict(self, X):
 		self.predict_flag = True
@@ -342,13 +370,6 @@ class Network(object):
 		self.batch_size = self.inputs[0].batchSize()
 		self.forward()
 
-		# accumulamos la monitorizacion
-		for k in range(len(self.losses_monitoring)):
-			self.losses_monitoring[k] += self.losses[k].temp_forward_result
-		for k in range(len(self.metrics_monitoring)):
-			self.metrics_monitoring[k] += self.metrics[k].temp_forward_result
-		self.iterations_monitoring += 1
-
 		# Forzamos que tenga que hacer el forward el training
 		self.status = Network.STATUS.COMPILED
 
@@ -357,19 +378,9 @@ class Network(object):
 		UTILES:
 			
 	"""
-	def __reset_monitoring(self):
-		self.iterations_monitoring = 0
-		for k in range(len(self.losses_monitoring)):
-			self.losses_monitoring[k] = 0
-		for k in range(len(self.metrics_monitoring)):
-			self.metrics_monitoring[k] = 0
-
 	def monitoring(self):
-		print('Losses:', dict([(self.losses[k].name, self.losses_monitoring[k] / self.iterations_monitoring) for k in range(len(self.losses_monitoring))]))
-		print('Metrics:', dict([(self.metrics[k].name, self.metrics_monitoring[k] / self.iterations_monitoring) for k in range(len(self.metrics_monitoring))]))
-		
-		# reseteamos la monitorizacion
-		self.__reset_monitoring()
+		print('Losses:', dict([(l.name, l.temp_forward_result) for l in self.losses]))
+		print('Metrics:', dict([(m.name, m.temp_forward_result) for m in self.metrics]))
 
 	def plot(self, filestr):
 		if self.status != Network.STATUS.COMPILED:
@@ -382,7 +393,7 @@ class Network(object):
 			reuse_html = ''
 			if 'reuse' in n.__dict__:
 				if n.reuse:
-					s = n.pipeline_name + ': shared parameters '
+					s = n.pipeline_name + ': shared parameters'
 				else:
 					s = n.pipeline_name + ': not shared parameters'
 				reuse_html = '<tr><td border="1" sides="T" style="dashed">'+s+'</td></tr>'

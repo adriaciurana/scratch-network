@@ -79,6 +79,12 @@ for i in range(10000):
 	print('-----'+ str(time.time() - t) +'------')
 	
 """
-params = {'shuffle': True, 'monitoring': True, 'monitor_iterations': 5, 'train_iterations': 10, 'val_iterations': 5}
+params = {
+	'shuffle': True, 
+	'iterations': {
+		'training': 10,
+		'validation': 5,
+	}
+}
 net.train(X={'Input': images_train}, Y={'Label': labels_train}, epochs=10, batch_size=128, Xval={'Input': images_train}, Yval={'Label': labels_train}, params=params)
 print(net.save("example.h5"))
