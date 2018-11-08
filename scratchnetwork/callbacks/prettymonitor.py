@@ -1,5 +1,5 @@
 import time
-from .prettyresults import PrettyResults
+from ..utils.prettyresults import PrettyResults
 from .callback import Callback
 from collections import OrderedDict 
 class PrettyMonitor(Callback):
@@ -72,10 +72,15 @@ class PrettyMonitor(Callback):
 				total_epochs_str = str(total_epochs)
 				epoch_str = str(epoch)
 				epoch_str = (len(total_epochs_str) - len(epoch_str))*' ' + epoch_str
+
+				total_iterations_str = str(total_iterations)
+				iteration_str = str(iteration)
+				iteration_str = (len(total_iterations_str) - len(iteration_str))*' ' + iteration_str
 				
 				dict_info = OrderedDict()
 				dict_info['Batch'] = batch_index_str + "/" + total_batchs_str
 				dict_info['Epoch'] = epoch_str + "/" + total_epochs_str 
+				dict_info['Iteration'] = iteration_str + "/" + total_iterations_str 
 				dict_info['Elapsed Time'] =  '{:0.2f}'.format(self.time_monitoring)
 				
 				self.pretty.add_dictionary(dict_info, '-')

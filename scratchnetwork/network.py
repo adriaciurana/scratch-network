@@ -8,7 +8,7 @@ from .optimizers.optimizer import Optimizer
 from .backend.exceptions import Exceptions
 from .utils.pipeline import Pipeline
 from .utils.prettyresults import PrettyResults
-from .utils.prettymonitor import PrettyMonitor
+from .callbacks.prettymonitor import PrettyMonitor
 from random import shuffle
 
 class Network(object):

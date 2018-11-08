@@ -19,6 +19,7 @@ from scratchnetwork.metrics import Accuracy
 from scratchnetwork.optimizers import SGD, AdaGrad
 from scratchnetwork.regularizators import L1 as LR1C
 from scratchnetwork.layers import OneHotDecode
+from scratchnetwork.callbacks.prettymonitor import PrettyMonitor
 LR1 = LR1C(0.01)
 
 
@@ -82,9 +83,10 @@ for i in range(10000):
 params = {
 	'shuffle': True, 
 	'iterations': {
-		'training': 10,
-		'validation': 5,
+		'training': 1000,
+		'validation': 1,
 	}
 }
-net.fit(X={'Input': images_train}, Y={'Label': labels_train}, epochs=10, batch_size=128, Xval={'Input': images_train}, Yval={'Label': labels_train}, params=params)
+callbacks = [PrettyMonitor(PrettyMonitor.TRAINING, 100), PrettyMonitor(PrettyMonitor.VALIDATION)]
+net.fit(X={'Input': images_train}, Y={'Label': labels_train}, epochs=10, batch_size=128, Xval={'Input': images_train}, Yval={'Label': labels_train}, params=params, callbacks=callbacks)
 net.save("example.h5", freeze=True)
