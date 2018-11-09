@@ -11,6 +11,7 @@ class Conv2D(Layer):
 		if params is None:
 			params = {}
 
+		# Initializer
 		if isinstance(initializer, Initializer):
 			initializer = {'weights': initializer}
 
@@ -18,6 +19,7 @@ class Conv2D(Layer):
 		if initializer is not None:
 			comp_initializer.update(initializer)
 
+		# Regularizator
 		if regularizator is not None:
 			params['regularizator'] = regularizator
 
@@ -26,6 +28,7 @@ class Conv2D(Layer):
 		self.num_filters = num_filters
 		self.kernel_size = tuple(kernel_size)
 		
+		# Stride
 		if isinstance(stride, (list, tuple)):
 			self.stride = tuple(stride)
 		else:
@@ -38,8 +41,11 @@ class Conv2D(Layer):
 		elif self.padding == 'same':
 			self.padding_size = (self.kernel_size[0] // 2, self.kernel_size[1] // 2)
 
+		# Weights names
 		if 'weights_names' not in params:
 			params['weights_names'] = ('kernels', 'bias')
+
+		
 		super(Conv2D, self).__init__(node, func_repr_weights=lambda x: \
 			np.transpose(x, [0, 3, 1, 2]), params=params)
 		

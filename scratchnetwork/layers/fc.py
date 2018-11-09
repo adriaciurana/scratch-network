@@ -6,6 +6,7 @@ class FC(Layer):
 		if params is None:
 			params = {}
 
+		# Initializer
 		if isinstance(initializer, Initializer):
 			initializer = {'weights': initializer}
 
@@ -13,16 +14,19 @@ class FC(Layer):
 		if initializer is not None:
 			comp_initializer.update(initializer)
 
+		# Regularizator
 		if regularizator is not None:
 			params['regularizator'] = regularizator
 
+		# Weights names
 		if 'weights_names' not in params:
 			params['weights_names'] = ('weights', 'bias')
 		params['number_of_inputs'] = 1
-		super(FC, self).__init__(node, params=params)
-		
+
 		self.initializer = comp_initializer
 		self.neurons = neurons
+
+		super(FC, self).__init__(node, params=params)
 	
 	def computeSize(self):
 		super(FC, self).computeSize()
