@@ -33,10 +33,10 @@ class Node(object):
 
 		self.type = None
 
-	def __init__(self, network, name, layer, layer_args, layer_kargs):
+	def __init__(self, network, name, layer, layer_args, layer_kwargs):
 		if issubclass(layer, Layer):
 			layer_args = tuple([self] + list(layer_args))
-			layer = layer(*layer_args, **layer_kargs)
+			layer = layer(*layer_args, **layer_kwargs)
 		else:
 			raise Exceptions.NotFoundLayer("La capa que has introducido no existe.")
 

@@ -47,19 +47,25 @@ class Network(object):
 
 		self.batch_size = 0
 
-	def Node(self, name, layer, *layer_args, **layer_kargs):
+	def Node(self, name, layer, *layer_args, **layer_kwargs):
 		for n in self.nodes.values():
 			if n.name == name:
 				raise NameError('El nombre de esta capa ya existe')
 
 		if layer is Pipeline:
-			node = layer(self, name, layer_kargs['creator'] if 'creator' in layer_kargs else layer_args[0])
+			node = layer(self, name, layer_kwargs['creator'] if 'creator' in layer_kwargs else layer_args[0])
 			return node
 		
 		else:
-			node = Node(self, name, layer, layer_args, layer_kargs)
+			node = Node(self, name, layer, layer_args, layer_kwargs)
 			self.nodes[node.label] = node
 			return node
+
+	def add(self, name, layer, *layer_args, **layer_kwargs):
+		return self.Node(name, layer, *layer_args, **layer_kwargs)
+
+	def __call__(self, name, layer, *layer_args, **layer_kwargs):
+		return self.Node(name, layer, *layer_args, **layer_kwargs)
 
 	"""
 		COMPILE:
@@ -460,10 +466,10 @@ class Network(object):
 		
 		return self.nodes[label].weights
 
-	def set_layer(self, label, *args, **kargs):
+	def set_layer(self, label, *args, **kwargs):
 		self.__testNetworkHasNotCompiled()
 
-		return self.nodes[label].layer.set(*args, **kargs)
+		return self.nodes[label].layer.set(*args, **kwargs)
 
 	def save(self, filename, freeze=False):
 		self.__testNetworkHasNotCompiled()
