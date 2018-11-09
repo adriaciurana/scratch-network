@@ -439,9 +439,9 @@ class Network(object):
 			reuse_html = ''
 			if n.is_copied:
 				if n.is_copied_reuse_layer:
-					s = n.pipeline_name + ': shared parameters'
+					s = n.pipeline.name + ': shared parameters'
 				else:
-					s = n.pipeline_name + ': not shared parameters'
+					s = n.pipeline.name + ': not shared parameters'
 				reuse_html = '<tr><td border="1" sides="T" style="dashed">'+s+'</td></tr>'
 
 			nodes[n] = i

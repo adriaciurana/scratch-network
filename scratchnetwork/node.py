@@ -8,7 +8,7 @@ import time
 class Node(object):
 	INPUT, OUTPUT, MIDDLE, NOT_CONNECTED = range(4)
 
-	def init(self, network, layer, label, name, is_copied=False, is_copied_reuse_layer=False, pipeline_name=None): #compute_forward_in_prediction, compute_backward
+	def init(self, network, layer, label, name, is_copied=False, is_copied_reuse_layer=False, pipeline=None): #compute_forward_in_prediction, compute_backward
 		self.temp_forward_dependences = 0
 		self.temp_backward_dependences = 0
 
@@ -36,7 +36,7 @@ class Node(object):
 		# Copias
 		self.is_copied = is_copied
 		self.is_copied_reuse_layer = False
-		self.pipeline_name = pipeline_name
+		self.pipeline = pipeline
 
 	def __init__(self, network, layer, name, layer_args, layer_kwargs):
 		if issubclass(layer, Layer):
@@ -272,12 +272,16 @@ class Node(object):
 	def batch_size(self):
 		return self.layer.batch_size
 
-	def copy(self, network=None, name_prepend=None, copy_layer=False, pipeline_name=None):
+	def copy(self, network=None, name_prepend=None, copy_layer=False, pipeline=None):
 		c = self.__class__
 		copy_node_instance = c.__new__(c)
+		if not copy_layer and pipeline is None:
+			raise Exceptions.ReUseLayerImpliesPipeline("Reusar la capa "+self.node.name+" implica tener que usar un Pipeline.")
+
+		# No reusar
 		if copy_layer:
 			layer = self.layer.copy(copy_node_instance)
-		else:
+		else: # Reusar
 			layer = self.layer 
 
 		if name_prepend is not None: #isinstance(name_prepend, str):
@@ -291,7 +295,7 @@ class Node(object):
 		if network is None:
 			network = self.network
 
-		copy_node_instance.init(network, layer, label, name, is_copied=True, is_copied_reuse_layer=copy_layer, pipeline_name=pipeline_name)
+		copy_node_instance.init(network, layer, label, name, is_copied=True, is_copied_reuse_layer=copy_layer, pipeline=pipeline)
 		
 		return copy_node_instance
 

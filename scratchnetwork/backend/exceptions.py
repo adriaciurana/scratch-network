@@ -39,6 +39,8 @@ class Exceptions:
 		pass
 	class PipelineInputAndOutputFunction(Exception):
 		pass
+	class ReUseLayerImpliesPipeline(Exception):
+		pass
 
 	# Operation
 	class OperationNotExist(Exception):

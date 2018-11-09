@@ -26,7 +26,7 @@ class Pipeline(object):
 		for n in self.subnet.nodes.values():
 			if reuse:
 				n.network = self.network
-			node = n.copy(network=self.network, name_prepend=name + '/' + str(self.num_copies) + '/', copy_layer=not reuse, pipeline_name=self.name)
+			node = n.copy(network=self.network, name_prepend=name + '/' + str(self.num_copies) + '/', copy_layer=not reuse, pipeline=self)
 			if n == self.input:
 				start = node
 			if n == self.output:
