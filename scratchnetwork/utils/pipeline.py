@@ -2,7 +2,7 @@ from ..node import Node
 from ..layers.layer import Layer
 from ..backend.exceptions import Exceptions
 class Pipeline(object):
-	def __init__(self, network, name, creator):
+	def __init__(self, network, creator, name):
 		self.network = network
 		self.name = name
 		self.subnet = Pipeline.SubNetwork()
@@ -26,9 +26,7 @@ class Pipeline(object):
 		for n in self.subnet.nodes.values():
 			if reuse:
 				n.network = self.network
-			node = n.copy(copy_layer=not reuse, name_prepend=name + '/' + str(self.num_copies) + '/', network=self.network)
-			node.reuse = reuse
-			node.pipeline_name = self.name
+			node = n.copy(network=self.network, name_prepend=name + '/' + str(self.num_copies) + '/', copy_layer=not reuse, pipeline_name=self.name)
 			if n == self.input:
 				start = node
 			if n == self.output:
@@ -80,7 +78,7 @@ class Pipeline(object):
 			self.nodes = {}
 
 		def Node(self, layer, name, *layer_args, **layer_kwargs):
-			node = Node(self, name, layer, layer_args, layer_kwargs)
+			node = Node(self, layer, name, layer_args, layer_kwargs)
 			self.nodes[node.label] = node
 			return node
 

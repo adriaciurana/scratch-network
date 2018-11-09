@@ -5,10 +5,10 @@ from .layers.layer import Layer
 from .layers.input import Input
 from .layers.target import Target
 from .layers.avoidfreeze import AvoidFreeze
-from .optimizers import SGD
+from .utils.pipeline import Pipeline
+from .optimizers.sgd import SGD
 from .optimizers.optimizer import Optimizer
 from .backend.exceptions import Exceptions
-from .utils.pipeline import Pipeline
 from .utils.prettyresults import PrettyResults
 from .callbacks.prettymonitor import PrettyMonitor
 from random import shuffle
@@ -53,11 +53,11 @@ class Network(object):
 				raise NameError('El nombre de esta capa ya existe')
 
 		if layer is Pipeline:
-			node = layer(self, name, layer_kwargs['creator'] if 'creator' in layer_kwargs else layer_args[0])
+			node = layer(self, layer_kwargs['creator'] if 'creator' in layer_kwargs else layer_args[0], name)
 			return node
 		
 		else:
-			node = Node(self, name, layer, layer_args, layer_kwargs)
+			node = Node(self, layer, name, layer_args, layer_kwargs)
 			self.nodes[node.label] = node
 			return node
 
@@ -439,8 +439,8 @@ class Network(object):
 		nodes = {}
 		for i, n in enumerate(self.nodes.values()):
 			reuse_html = ''
-			if 'reuse' in n.__dict__:
-				if n.reuse:
+			if n.is_copied:
+				if n.is_copied_reuse_layer:
 					s = n.pipeline_name + ': shared parameters'
 				else:
 					s = n.pipeline_name + ': not shared parameters'

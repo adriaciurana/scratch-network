@@ -8,7 +8,7 @@ import time
 class Node(object):
 	INPUT, OUTPUT, MIDDLE, NOT_CONNECTED = range(4)
 
-	def init(self, network, label, name, layer): #compute_forward_in_prediction, compute_backward
+	def init(self, network, layer, label, name, is_copied=False, is_copied_reuse_layer=False, pipeline_name=None): #compute_forward_in_prediction, compute_backward
 		self.temp_forward_dependences = 0
 		self.temp_backward_dependences = 0
 
@@ -33,7 +33,12 @@ class Node(object):
 
 		self.type = None
 
-	def __init__(self, network, name, layer, layer_args, layer_kwargs):
+		# Copias
+		self.is_copied = is_copied
+		self.is_copied_reuse_layer = False
+		self.pipeline_name = pipeline_name
+
+	def __init__(self, network, layer, name, layer_args, layer_kwargs):
 		if issubclass(layer, Layer):
 			layer_args = tuple([self] + list(layer_args))
 			layer = layer(*layer_args, **layer_kwargs)
@@ -52,7 +57,7 @@ class Node(object):
 
 		compute_forward_in_prediction = True
 		compute_backward = False
-		self.init(network, label, name, layer)
+		self.init(network, layer, label, name)
 
 	"""
 		RELATIONS
@@ -267,7 +272,7 @@ class Node(object):
 	def batch_size(self):
 		return self.layer.batch_size
 
-	def copy(self, copy_layer=False, name_prepend=None, network=None):
+	def copy(self, network=None, name_prepend=None, copy_layer=False, pipeline_name=None):
 		c = self.__class__
 		copy_node_instance = c.__new__(c)
 		if copy_layer:
@@ -286,7 +291,7 @@ class Node(object):
 		if network is None:
 			network = self.network
 
-		copy_node_instance.init(network, label, name, layer)
+		copy_node_instance.init(network, layer, label, name, is_copied=True, is_copied_reuse_layer=copy_layer, pipeline_name=pipeline_name)
 		
 		return copy_node_instance
 
@@ -317,5 +322,5 @@ class Node(object):
 	@staticmethod
 	def load_static(network, data, h5_container):
 		obj = Node.__new__(Node)
-		obj.init(network, data['label'], data['name'], Layer.load_static(obj, data['layer'], h5_container['layer'])) #, data['compute_forward_in_prediction'], data['compute_backward']
+		obj.init(network, Layer.load_static(obj, data['layer'], h5_container['layer']), data['label'], data['name']) #, data['compute_forward_in_prediction'], data['compute_backward']
 		return obj

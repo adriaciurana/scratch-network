@@ -4,12 +4,12 @@ from mnist import MNIST
 sys.path.append(os.path.dirname(__file__)+"../../../")
 from scratchnetwork import Network
 from scratchnetwork.layers import Input, FC, Conv2D, Pooling2D, DropOut, ReLU, Flatten, Softmax, OneHotDecode, Concat
+from scratchnetwork.utils import Pipeline
 from scratchnetwork.losses import SoftmaxCrossEntropy
 from scratchnetwork.metrics import Accuracy
 from scratchnetwork.optimizers import SGD, AdaGrad
 from scratchnetwork.regularizators import L1 as LR1C
 from scratchnetwork.callbacks import PrettyMonitor
-from scratchnetwork.utils import Pipeline
 LR1 = LR1C(0.0005)
 
 
