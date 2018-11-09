@@ -1,5 +1,6 @@
 from .optimizer import Optimizer
 import numpy as np
+from ..backend.misc import Misc
 class SGD(Optimizer):
 	def __init__(self, lr=1e-2, mu=0.9, clip_norm=1, decay=0., nesterov=False):
 		super(SGD, self).__init__()
@@ -42,7 +43,7 @@ class SGD(Optimizer):
 		layer_json['attributes']['nesterov'] = self.nesterov
 		h5_iweights = h5_container.create_group('iweights')
 		for k, v in self.iweights.items():
-			h5_iweights.create_dataset(k, data=v, dtype=v.dtype)
+			h5_iweights.create_dataset(Misc.pack_hdf_name(k), data=v, dtype=v.dtype)
 		return layer_json
 		
 	def load(self, data, h5_container):
@@ -55,5 +56,5 @@ class SGD(Optimizer):
 		h5_iweights = h5_container['iweights']
 		self.iweights = {}
 		for k in h5_iweights.keys():
-			self.iweights[k] = h5_iweights[k].value
+			self.iweights[Misc.unpack_hdf_name(k)] = h5_iweights[k].value
 		

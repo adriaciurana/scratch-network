@@ -52,8 +52,8 @@ class Operation(Layer):
 		elif self.operation == self.DIV:
 			return (doutput/(b + self.eps), -(self.values.a/(self.values.b**2 + self.eps))*doutput), None
 
-	def save(self, h5_container):
-		layer_json = super(Reshape, self).save(h5_container)
+	def save(self, h5_container, get_weights_id):
+		layer_json = super(Reshape, self).save(h5_container, get_weights_id)
 		layer_json['attributes']['shape'] = self.shape
 		return layer_json
 		

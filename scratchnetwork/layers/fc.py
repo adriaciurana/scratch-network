@@ -46,8 +46,8 @@ class FC(Layer):
 		dw =  self.values.input.T.dot(doutput)
 		return dx, (dw, np.sum(doutput, axis=0))
 	
-	def save(self, h5_container):
-		layer_json = super(FC, self).save(h5_container)
+	def save(self, h5_container, get_weights_id):
+		layer_json = super(FC, self).save(h5_container, get_weights_id)
 		layer_json['attributes']['neurons'] = self.neurons
 		return layer_json
 

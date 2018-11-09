@@ -66,8 +66,8 @@ class Conv2D(Layer):
 		dx, dw, db = fast_layers.conv_backward_fast(doutput.transpose(0, 3, 1, 2), self.values.cache)
 		return dx.transpose(0, 2, 3, 1), (dw.transpose(1, 2, 3, 0), db)
 
-	def save(self, h5_container):
-		layer_json = super(Conv2D, self).save(h5_container)
+	def save(self, h5_container, get_weights_id):
+		layer_json = super(Conv2D, self).save(h5_container, get_weights_id)
 		layer_json['attributes']['num_filters'] = self.num_filters
 		layer_json['attributes']['kernel_size'] = self.kernel_size
 		layer_json['attributes']['stride'] = self.stride

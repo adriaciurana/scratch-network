@@ -37,7 +37,7 @@ class AdaGrad(Optimizer):
 		layer_json['attributes']['clip_norm'] = self.clip_norm
 		h5_g2 = h5_container.create_group('g2')
 		for k, v in self.g2.items():
-			h5_g2.create_dataset(k, data=v, dtype=v.dtype)
+			h5_g2.create_dataset(Misc.pack_hdf_name(k), data=v, dtype=v.dtype)
 		return layer_json
 		
 	def load(self, data, h5_container):
@@ -48,5 +48,5 @@ class AdaGrad(Optimizer):
 		h5_g2 = h5_container['g2']
 		self.g2 = {}
 		for k in h5_g2.keys():
-			self.g2[k] = h5_g2[k].value
+			self.g2[Misc.unpack_hdf_name(k)] = h5_g2[k].value
 		

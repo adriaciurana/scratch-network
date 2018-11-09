@@ -96,11 +96,11 @@ class Layer(object):
 				if w == 'func_repr':
 					continue
 				attr = getattr(self, w)
-				h5_container.create_dataset(w, data=attr, dtype=attr.dtype)
+				h5_container.create_dataset(Misc.pack_hdf_name(w), data=attr, dtype=attr.dtype)
 
 		def load(self, h5_container):
 			for name in h5_container.keys():
-				attr = h5_container[name].value
+				attr = h5_container[Misc.unpack_hdf_name(name)].value
 				setattr(self, name, attr)
 
 	class Values(object):
@@ -188,12 +188,13 @@ class Layer(object):
 	"""
 		Save
 	"""
-	def save(self, h5_container):
+	def save(self, h5_container, get_weights_id):
 		layer_json = {'type': self.__class__.__name__, 'module': self.__class__.__module__, 'attributes':{}}
 		layer_json['hash'] = Misc.hash(layer_json['module'], layer_json['type'])
 		if self.regularizator is not None:
 			layer_json['attributes']['regularizator'] = self.regularizator.save(h5_container.create_group("regularizator"))
-		self.weights.save(h5_container.create_group("weights"))
+		layer_json['weights'] = get_weights_id(self.weights)
+		#self.weights.save(h5_container.create_group("weights"))
 		layer_json['attributes']['weights_names'] = self.weights_names
 		layer_json['attributes']['is_trainable'] = self.is_trainable
 		layer_json['attributes']['compute_backward'] = self.compute_backward
@@ -211,7 +212,7 @@ class Layer(object):
 
 
 	@staticmethod
-	def load_static(node, data, h5_container):
+	def load_static(node, data, h5_container, get_weights):
 		if not Misc.check_hash(data['module'], data['type'], data['hash']):
 			raise IndexError # Error
 		my_class = Misc.import_class(data['module'], data['type'])
@@ -220,8 +221,7 @@ class Layer(object):
 			obj.regularizator = Regularizator.load_static(data['attributes']['regularizator'], h5_container['regularizator'])
 		else:
 			obj.regularizator = None
-		obj.weights = Layer.Weights()
-		obj.weights.load(h5_container['weights'])
+		obj.weights = get_weights[data['weights']]
 		obj.values = Layer.Values()
 		obj.weights_names = data['attributes']['weights_names']
 		obj.is_trainable = data['attributes']['is_trainable']

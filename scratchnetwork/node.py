@@ -8,7 +8,7 @@ import time
 class Node(object):
 	INPUT, OUTPUT, MIDDLE, NOT_CONNECTED = range(4)
 
-	def init(self, network, layer, label, name, is_copied=False, is_copied_reuse_layer=False, pipeline=None): #compute_forward_in_prediction, compute_backward
+	def init(self, network, layer, label, name, is_copied=False, is_copied_reuse_layer=False, pipeline_name=None): #compute_forward_in_prediction, compute_backward
 		self.temp_forward_dependences = 0
 		self.temp_backward_dependences = 0
 
@@ -36,7 +36,7 @@ class Node(object):
 		# Copias
 		self.is_copied = is_copied
 		self.is_copied_reuse_layer = False
-		self.pipeline = pipeline
+		self.pipeline_name = pipeline_name
 
 	def __init__(self, network, layer, name, layer_args, layer_kwargs):
 		if issubclass(layer, Layer):
@@ -272,10 +272,10 @@ class Node(object):
 	def batch_size(self):
 		return self.layer.batch_size
 
-	def copy(self, network=None, name_prepend=None, copy_layer=False, pipeline=None):
+	def copy(self, network=None, name_prepend=None, copy_layer=False, pipeline_name=None):
 		c = self.__class__
 		copy_node_instance = c.__new__(c)
-		if not copy_layer and pipeline is None:
+		if not copy_layer and pipeline_name is None:
 			raise Exceptions.ReUseLayerImpliesPipeline("Reusar la capa "+self.node.name+" implica tener que usar un Pipeline.")
 
 		# No reusar
@@ -295,7 +295,7 @@ class Node(object):
 		if network is None:
 			network = self.network
 
-		copy_node_instance.init(network, layer, label, name, is_copied=True, is_copied_reuse_layer=copy_layer, pipeline=pipeline)
+		copy_node_instance.init(network, layer, label, name, is_copied=True, is_copied_reuse_layer=copy_layer, pipeline_name=pipeline_name)
 		
 		return copy_node_instance
 
@@ -315,16 +315,25 @@ class Node(object):
 	"""
 		Save
 	"""
-	def save(self, h5_container):
-		layer_json = self.layer.save(h5_container.create_group("layer"))
+	def save(self, h5_container, get_weights_id):
+		layer_json = self.layer.save(h5_container.create_group("layer"), get_weights_id)
 		return {
 			'label': self.label,
 			'name': self.name,
-			'layer': layer_json
+			'layer': layer_json,
+			'is_copied': self.is_copied,
+			'is_copied_reuse_layer': self.is_copied_reuse_layer,
+			'pipeline_name': self.pipeline_name
 		}
 
 	@staticmethod
-	def load_static(network, data, h5_container):
+	def load_static(network, data, h5_container, get_weights):
 		obj = Node.__new__(Node)
-		obj.init(network, Layer.load_static(obj, data['layer'], h5_container['layer']), data['label'], data['name']) #, data['compute_forward_in_prediction'], data['compute_backward']
+		obj.init(network, 
+			Layer.load_static(obj, data['layer'], h5_container['layer'], get_weights), 
+			data['label'], 
+			data['name'], 
+			is_copied=data['is_copied'],
+			is_copied_reuse_layer=data['is_copied_reuse_layer'],
+			pipeline_name=data['pipeline_name']) #, data['compute_forward_in_prediction'], data['compute_backward']
 		return obj

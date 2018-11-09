@@ -439,9 +439,9 @@ class Network(object):
 			reuse_html = ''
 			if n.is_copied:
 				if n.is_copied_reuse_layer:
-					s = n.pipeline.name + ': shared parameters'
+					s = n.pipeline_name + ': shared parameters'
 				else:
-					s = n.pipeline.name + ': not shared parameters'
+					s = n.pipeline_name + ': not shared parameters'
 				reuse_html = '<tr><td border="1" sides="T" style="dashed">'+s+'</td></tr>'
 
 			nodes[n] = i
@@ -479,6 +479,19 @@ class Network(object):
 		hf = h5py.File(filename, 'w')
 		nodes_h5 = hf.create_group('nodes')
 
+		# Metodo de copia para los pesos
+		weights_h5 = hf.create_group('weights')
+		weights_to_id = {}
+		weights_index = -1
+		def get_weights_id(x):
+			nonlocal weights_index
+			if x in weights_to_id:
+				return weights_to_id[x]
+			else:
+				weights_index += 1
+				weights_to_id[x] = weights_index
+			return weights_index
+		
 		# Nodos
 		nodes_json = {}
 		id_to_nodes = {}
@@ -489,7 +502,11 @@ class Network(object):
 			
 			id_to_nodes[i] = n
 			nodes_to_id[n] = i
-			nodes_json[i] = n.save(nodes_h5.create_group(str(i)))
+			nodes_json[i] = n.save(nodes_h5.create_group(str(i)), get_weights_id)
+
+		# Guardamos pesos
+		for w, i in weights_to_id.items():
+			w.save(weights_h5.create_group(str(i)))
 
 		# Relaciones (se almacenan como un diccionario)
 		relations_json = {}
@@ -522,7 +539,7 @@ class Network(object):
 		
 		# Json
 		network_json = {
-		'status': self.status,
+			'status': self.status,
 			'inputs': inputs_json,
 			'outputs': outputs_json,
 			'nodes': nodes_json,
@@ -552,11 +569,18 @@ class Network(object):
 
 		self.status = data['status']
 
-		# NODES
+		# Pesos
+		get_weights = {}
+		for i in hf['weights'].keys():
+			weights = Layer.Weights()
+			weights.load(hf['weights'][i])
+			get_weights[int(i)] = weights
+		
+		# Nodos
 		id_to_nodes = {}
 		self.nodes = {}
 		for i, n in data['nodes'].items():
-			node = Node.load_static(self, n, hf['nodes'][i])
+			node = Node.load_static(self, n, hf['nodes'][i], get_weights)
 			id_to_nodes[int(i)] = node
 			self.nodes[node.label] = node
 

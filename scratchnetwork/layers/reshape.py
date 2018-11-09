@@ -19,8 +19,8 @@ class Reshape(Layer):
 	def derivatives(self, doutput):
 		return doutput.reshape([-1] + self.in_size[0])
 
-	def save(self, h5_container):
-		layer_json = super(Reshape, self).save(h5_container)
+	def save(self, h5_container, get_weights_id):
+		layer_json = super(Reshape, self).save(h5_container, get_weights_id)
 		layer_json['attributes']['shape'] = self.shape
 		return layer_json
 		

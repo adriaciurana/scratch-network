@@ -60,8 +60,8 @@ class Pooling2D(Layer):
 			dx = pooling2d.nb_derivatives_mean(doutput, tuple(self.in_size[0]), self.pool_size, self.stride)
 		return dx[:, self.padding_size[0]:(self.in_size[0][0] - self.padding_size[0]), self.padding_size[1]:(self.in_size[0][1] - self.padding_size[1]), :]
 
-	def save(self, h5_container):
-		layer_json = super(Pooling2D, self).save(h5_container)
+	def save(self, h5_container, get_weights_id):
+		layer_json = super(Pooling2D, self).save(h5_container, get_weights_id)
 		layer_json['attributes']['type_pooling'] = self.type_pooling
 		layer_json['attributes']['pool_size'] = self.pool_size
 		layer_json['attributes']['stride'] = self.stride

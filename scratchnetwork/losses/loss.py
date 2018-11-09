@@ -19,8 +19,8 @@ class Loss(AvoidFreeze):
 	def derivatives(self, doutput=None):
 		pass
 
-	def save(self, h5_container):
-		layer_json = super(Loss, self).save(h5_container)
+	def save(self, h5_container, get_weights_id):
+		layer_json = super(Loss, self).save(h5_container, get_weights_id)
 		layer_json['attributes']['weight'] = self.weight
 		return layer_json
 		

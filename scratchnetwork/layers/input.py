@@ -40,8 +40,8 @@ class Input(Layer):
 	def batch_size(self):
 		return self.batch_size_input
 
-	def save(self, h5_container):
-		layer_json = super(Input, self).save(h5_container)
+	def save(self, h5_container, get_weights_id):
+		layer_json = super(Input, self).save(h5_container, get_weights_id)
 		layer_json['attributes']['shape'] = self.shape
 		return layer_json
 		
