@@ -69,13 +69,19 @@ for i in range(10000):
 	print('-----'+ str(time.time() - t) +'------')
 	
 """
-params = {
-	'shuffle': True, 
-	'iterations': {
-		'training': 1000,
-		'validation': 1,
-	}
+iterations = {
+	'training': 1000,
+	'validation': 1,
 }
 callbacks = [PrettyMonitor(PrettyMonitor.TRAINING, 1), PrettyMonitor(PrettyMonitor.VALIDATION)]
-net.fit(X={'Input': images_train}, Y={'Label': labels_train}, epochs=10, batch_size=128, Xval={'Input': images_train}, Yval={'Label': labels_train}, params=params, callbacks=callbacks)
+net.fit(
+	X={'Input': images_train}, 
+	Y={'Label': labels_train}, 
+	epochs=10, 
+	batch_size=128, 
+	Xval={'Input': images_train}, 
+	Yval={'Label': labels_train}, 
+	shuffle=True, 
+	iterations=iterations,
+	callbacks=callbacks)
 net.save("example.h5", freeze=True)

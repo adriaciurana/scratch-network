@@ -11,7 +11,7 @@ from .optimizers.optimizer import Optimizer
 from .backend.exceptions import Exceptions
 from .utils.prettyresults import PrettyResults
 from .callbacks.prettymonitor import PrettyMonitor
-from random import shuffle
+from random import shuffle as random_shuffle
 
 class Network(object):
 	# Posibles estados de la red
@@ -282,7 +282,7 @@ class Network(object):
 	def test_batch(self, X, Y):
 		return self.validate_batch(X, Y)
 
-	def fit(self, X, Y, epochs, batch_size, Xval=None, Yval=None, params={'shuffle': True, 'iterations': {'training': None, 'validation': None}}, callbacks=None):
+	def fit(self, X, Y, epochs, batch_size, Xval=None, Yval=None, shuffle=True, iterations= {'training': None, 'validation': None}, callbacks=None):
 		self.__testFreezeModel()
 		self.__testNetworkHasNotCompiled()
 
@@ -292,30 +292,28 @@ class Network(object):
 		for c in callbacks:
 			c.init(self)
 
-		# Redefinimos epochs
+		# Redefinimos
 		total_epochs = epochs
+		enable_shuffle = shuffle
 
 		# Flags para los parametros
-		has_params = params is not None and params and isinstance(params, dict)
-		enable_shuffle = has_params and 'shuffle' in params and params['shuffle']
+		has_iterations = iterations is not None and iterations and isinstance(iterations, dict)
 		enable_validation = Xval is not None and Yval is not None
 
 		# Definimos el numero de iteraciones maximas por el training
 		total_batchs = list(X.values())[0].shape[0]
-		if has_params and 'iterations' in params and \
-			'training' in params['iterations'] and \
-			params['iterations']['training'] is not None:
-			total_batchs = min(total_batchs, batch_size*params['iterations']['training'])
+		if has_iterations and 'training' in iterations and \
+			iterations['training'] is not None:
+			total_batchs = min(total_batchs, batch_size*iterations['training'])
 		total_iterations = math.ceil(total_batchs / batch_size)
 
 		# Definimos el numero de iteraciones maximas por el validation (si existe)
 		if enable_validation:
 			total_batchs_val = list(Xval.values())[0].shape[0]
 
-			if has_params and 'iterations' in params and \
-				'validation' in params['iterations'] and \
-				params['iterations']['validation'] is not None:
-				total_batchs_val = min(total_batchs_val, batch_size*params['iterations']['validation'])
+			if has_iterations and 'validation' in iterations and \
+				iterations['validation'] is not None:
+				total_batchs_val = min(total_batchs_val, batch_size*iterations['validation'])
 			total_iterations_val = math.ceil(total_batchs_val / batch_size)
 		
 		# Definimos los indices para realizar un shuffle de forma rapida
@@ -330,7 +328,7 @@ class Network(object):
 			#
 			# Aplicamos el shuffle
 			if enable_shuffle:
-				shuffle(indices)
+				random_shuffle(indices)
 
 			# Iniciamos la variables para training
 			batch_index = 0
@@ -366,7 +364,7 @@ class Network(object):
 			if enable_validation:
 				# Aplicamos el shuffle
 				if enable_shuffle:
-					shuffle(indices_val)
+					random_shuffle(indices_val)
 				
 				# Iniciamos la variables para training
 				batch_index = 0
