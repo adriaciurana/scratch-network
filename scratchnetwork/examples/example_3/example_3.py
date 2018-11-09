@@ -1,19 +1,13 @@
-import sys
-import os
+import sys, os
 import numpy as np
 import matplotlib.pylab as plt
-
 sys.path.append(os.path.dirname(__file__)+"../../../")
 from scratchnetwork import Network
-from scratchnetwork.layers import Input
-from scratchnetwork.layers import Conv2D
-from scratchnetwork.layers import Pooling2D
+from scratchnetwork.layers import Input, Conv2D, Pooling2D
 from scratchnetwork.losses import MSE
 from scratchnetwork.metrics import MRSE
 from scratchnetwork.optimizers import SGD
-from scipy import signal
-from scipy import ndimage
-from scipy import misc
+
 net = Network()
 inputX = net.Node("Input", Input, [20, 20, 1])
 inputY = net.Node("Y", Input, [10, 10, 1])

@@ -1,25 +1,14 @@
-import sys
-import os
+import sys, os, time
 import numpy as np
-import time
-import h5py
-
+from mnist import MNIST
 sys.path.append(os.path.dirname(__file__)+"../../../")
 from scratchnetwork import Network
-from scratchnetwork.layers import Input
-from scratchnetwork.layers import FC
-from scratchnetwork.layers import Conv2D
-from scratchnetwork.layers import Pooling2D
-from scratchnetwork.layers import DropOut
-from scratchnetwork.layers import ReLU
-from scratchnetwork.layers import Flatten
-from scratchnetwork.layers import Softmax
-from scratchnetwork.layers import Concat
+from scratchnetwork.layers import Input, FC, Conv2D, Pooling2D, DropOut, ReLU, Flatten, Softmax, OneHotDecode
 from scratchnetwork.losses import SoftmaxCrossEntropy
 from scratchnetwork.metrics import Accuracy
-from scratchnetwork.optimizers import SGD
+from scratchnetwork.optimizers import SGD, AdaGrad
 from scratchnetwork.regularizators import L1 as LR1C
-from scratchnetwork.layers import OneHotDecode
+from scratchnetwork.callbacks import PrettyMonitor
 from scratchnetwork.utils import Pipeline
 LR1 = LR1C(0.0005)
 

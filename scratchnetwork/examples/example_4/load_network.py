@@ -1,13 +1,14 @@
 import sys, os, time, h5py
 import numpy as np
-
+from mnist import MNIST
+import matplotlib.pylab as plt
+from random import shuffle
 sys.path.append(os.path.dirname(__file__)+"../../../")
 from scratchnetwork import Network
 
 num_examples = 1000
 
 # MNIST LOAD
-from mnist import MNIST
 mndata = MNIST('../datasets/mnist/data')
 images_test, labels_test = mndata.load_testing()
 images_test, labels_test = np.reshape(np.array(images_test), [-1, 28, 28]), np.array(labels_test)
@@ -35,8 +36,6 @@ net.load('example.h5')
 print('Loaded...')
 net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
 out = net.predict({'Input': images_test[:num_examples]})
-import matplotlib.pylab as plt
-from random import shuffle
 rrand = list(range(images_test.shape[0]))[:10]
 shuffle(rrand)
 for i in rrand:

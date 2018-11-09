@@ -1,15 +1,12 @@
-import sys
-import os
+import sys, os
 import numpy as np
-
 sys.path.append(os.path.dirname(__file__)+"../../../")
 from scratchnetwork import Network
-from scratchnetwork.layers import Input
-from scratchnetwork.layers import FC
-from scratchnetwork.layers import ReLU
+from scratchnetwork.layers import Input, FC, ReLU
 from scratchnetwork.losses import MSE
 from scratchnetwork.metrics import MRSE
 from scratchnetwork.optimizers import SGD
+
 net = Network()
 inputX = net.Node("Input", Input, [10])
 inputY = net.Node("Y", Input, [1])

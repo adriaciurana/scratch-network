@@ -6,3 +6,8 @@ from . import optimizers
 from . import regularizators
 from . import losses
 from . import metrics
+from . import callbacks
+from . import utils
+
+# Se importan directamente los objetos
+from .backend import *
