@@ -2,12 +2,11 @@ import sys, os, time
 import numpy as np
 from mnist import MNIST
 sys.path.append(os.path.dirname(__file__)+"../../../")
-from scratchnetwork import Network
+from scratchnetwork import Network, Initializer, L1 as LR1C
 from scratchnetwork.layers import Input, FC, Conv2D, Pooling2D, DropOut, ReLU, Flatten, Softmax, OneHotDecode
 from scratchnetwork.losses import SoftmaxCrossEntropy
 from scratchnetwork.metrics import Accuracy
 from scratchnetwork.optimizers import SGD, AdaGrad
-from scratchnetwork.regularizators import L1 as LR1C
 from scratchnetwork.callbacks import PrettyMonitor
 
 
@@ -26,10 +25,10 @@ net = Network()
 inputX = net(Input, "Input", [28, 28, 1])
 inputY = net(Input, "Label", [1])
 
-o = net(Conv2D, "Block 1: Conv2D", num_filters=32, kernel_size=(3,3), params={'regularizator': LR1})(inputX)
+o = net(Conv2D, "Block 1: Conv2D", num_filters=32, kernel_size=(3,3), initializer=Initializer('he'), regularizator=LR1)(inputX)
 o = net(ReLU, "Block 1: ReLU")(o)
 
-o = net(Conv2D, "Block 2: Conv2D", num_filters=64, kernel_size=(3,3), params={'regularizator': LR1})(o)
+o = net(Conv2D, "Block 2: Conv2D", num_filters=64, kernel_size=(3,3), initializer=Initializer('he'), regularizator=LR1)(o)
 o = net(ReLU, "Block 2: ReLU")(o)
 o = net(Pooling2D, "Block 2: Maxpooling", "max", pool_size=(2, 2))(o)
 o = net(DropOut, "Block 2: Dropout", 0.25)(o)

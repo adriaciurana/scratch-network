@@ -2,15 +2,26 @@ from .layer import Layer
 from ..backend.initializer import Initializer
 import numpy as np
 class FC(Layer):
-	def __init__(self, node, neurons, initializer={'weights': Initializer("lecun", "uniform"), 'bias': Initializer("zeros")}, params=None):
+	def __init__(self, node, neurons, initializer=None, regularizator=None, params=None):
 		if params is None:
 			params = {}
+
+		if isinstance(initializer, Initializer):
+			initializer = {'weights': initializer}
+
+		comp_initializer = {'weights': Initializer("lecun", "uniform"), 'bias': Initializer("zeros")}
+		if initializer is not None:
+			comp_initializer.update(initializer)
+
+		if regularizator is not None:
+			params['regularizator'] = regularizator
+
 		if 'weights_names' not in params:
 			params['weights_names'] = ('weights', 'bias')
 		params['number_of_inputs'] = 1
 		super(FC, self).__init__(node, params=params)
 		
-		self.initializer = initializer
+		self.initializer = comp_initializer
 		self.neurons = neurons
 	
 	def computeSize(self):

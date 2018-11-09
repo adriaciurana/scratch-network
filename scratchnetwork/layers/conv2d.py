@@ -7,13 +7,25 @@ from .cs231n import fast_layers
 
 class Conv2D(Layer):
 	# params = {'regularizator': {'kernels': ..., 'bias': ...}}
-	def __init__(self, node, num_filters, kernel_size=(3,3), stride=(1, 1), padding='valid', initializer={'weights': Initializer("lecun", "uniform"), 'bias': Initializer("zeros")}, params=None):
+	def __init__(self, node, num_filters, kernel_size=(3,3), stride=(1, 1), padding='valid', initializer=None, regularizator=None, params=None):
 		if params is None:
 			params = {}
 
-		self.initializer = initializer
+		if isinstance(initializer, Initializer):
+			initializer = {'weights': initializer}
+
+		comp_initializer = {'weights': Initializer("lecun", "uniform"), 'bias': Initializer("zeros")}
+		if initializer is not None:
+			comp_initializer.update(initializer)
+
+		if regularizator is not None:
+			params['regularizator'] = regularizator
+
+
+		self.initializer = comp_initializer
 		self.num_filters = num_filters
 		self.kernel_size = tuple(kernel_size)
+		
 		if isinstance(stride, (list, tuple)):
 			self.stride = tuple(stride)
 		else:

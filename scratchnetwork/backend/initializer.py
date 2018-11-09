@@ -42,7 +42,7 @@ class Initializer(object):
 				stddev = np.sqrt(scale)
 				return np.float64(compute_truncated_normal(shape, scale))
 			elif distribution == Initializer.UNIFORM:
-				stddev = np.sqrt(3.*scale)
+				stddev = np.sqrt(3.*scale) # https://revisionmaths.com/advanced-level-maths-revision/statistics/uniform-distribution
 				return np.float64(-stddev + np.random.rand(*shape)*(2*stddev))
 
 

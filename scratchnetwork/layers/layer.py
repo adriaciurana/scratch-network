@@ -4,7 +4,7 @@ import sys
 import numpy as np
 from ..backend.exceptions import Exceptions
 from ..backend.misc import Misc
-from ..regularizators.regularizator import Regularizator
+from ..backend.regularizators.regularizator import Regularizator
 
 #import time
 #t = time.time()
