@@ -115,10 +115,10 @@ class PrettyMonitor(Callback):
 				if split == self.network.SPLIT.TRAINING and self.type_estimation_finish != self.ESTIMATION_NONE:
 					if self.type_estimation_finish == self.ESTIMATION_AVG:
 						estimated_time_finish = (total_iterations - (iteration + 1))*(self.time_monitoring_acc / iteration)
+						estimated_time_finish_epochs = (((total_epochs - (epoch + 1))*total_iterations) - (iteration + 1))*(self.time_monitoring_acc / iteration)
 					elif self.type_estimation_finish == self.ESTIMATION_WINDOW:
 						estimated_time_finish = (total_iterations - (iteration + 1))*self.time_monitoring_acc
-
-					estimated_time_finish_epochs = estimated_time_finish*(total_epochs - (epoch + 1))
+						estimated_time_finish_epochs = (((total_epochs - (epoch + 1))*total_iterations) - (iteration + 1))*self.time_monitoring_acc
 					
 					self.pretty.add_row('Estimations (doesn\'t count validation split)', '=')
 					dict_estimation = OrderedDict()
