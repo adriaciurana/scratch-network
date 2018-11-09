@@ -60,11 +60,13 @@ class Node(object):
 	def addNext(self, node):
 		self.nexts.append(node.start)
 		node.prevs.append(self)
+		return self
 
 
 	def addPrev(self, node):
 		self.prevs.append(node.end)
 		node.nexts.append(self)
+		return self
 
 	def __call__(self, *vargs):
 		if len(vargs) == 1:
@@ -261,7 +263,8 @@ class Node(object):
 		except AttributeError:
 			raise Exceptions.LayerHasNoFillMethod("La capa " + self.name + "(" + type(self).__name__ + ") no puede llenarse.")
 	
-	def batchSize(self):
+	@property
+	def batch_size(self):
 		return self.layer.batch_size
 
 	def copy(self, copy_layer=False, name_prepend=None, network=None):

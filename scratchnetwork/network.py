@@ -2,6 +2,8 @@ import h5py, json, pydot, copy, time, math
 import numpy as np
 from .node import Node
 from .layers.layer import Layer
+from .layers.input import Input
+from .layers.target import Target
 from .layers.avoidfreeze import AvoidFreeze
 from .optimizers import SGD
 from .optimizers.optimizer import Optimizer
@@ -119,6 +121,15 @@ class Network(object):
 			if n not in self.inputs:
 				n.compute_forward_in_prediction = False
 
+		# Comprovamos que 
+		# Input no esta dentro de inputs
+		"""for n in self.nodes.values():
+			if isinstance(n.layer, Input) and n not in self.inputs:
+				raise Exceptions.InputNotInInputs("El input "+ str(n.name) + " no esta dentro de inputs.")
+			elif isinstance(n.layer, Target) and n in self.inputs:
+				raise Exceptions.TargetInInputs("El target "+ str(n.name) + " no puede estar dentro de inputs.")"""
+
+
 	def __compile(self):
 		for n in self.nodes.values():
 			# limpiamos las dependencias
@@ -162,9 +173,15 @@ class Network(object):
 
 	def compile(self, inputs, outputs, losses, metrics = [], optimizer=SGD()):
 		self.__testFreezeModel()
+
+		if isinstance(metrics, Node):
+			metrics = [metrics]
 		self.metrics = metrics
+		
 		# Calculamos los pesos de las losses
 		# si la entrada ha sido una lista los pesos de cada loss son equiprobables.
+		if isinstance(losses, Node):
+			losses = [losses]
 		if isinstance(losses, list):
 			v = 1./len(losses)
 			for l in losses:
@@ -182,7 +199,12 @@ class Network(object):
 		self.__compile()
 
 		# Entradas y salidas de la red
+		if isinstance(inputs, Node):
+			inputs = [inputs]
 		self.inputs = inputs
+
+		if isinstance(outputs, Node):
+			outputs = [outputs]
 		self.outputs = outputs
 
 		# Empezamos
@@ -227,11 +249,11 @@ class Network(object):
 		# Comprovamos que hemos llenado todos los inputs
 		self.__testAllInputsHaveData(only_no_targets=False)
 		# definimos el tipo tamano del batch
-		self.batch_size = self.inputs[0].batchSize()
+		self.batch_size = self.inputs[0].batch_size
 		
 		self.__backpropagation()
 
-	def validate_batch(self, X, Y):
+	def __validate_batch(self, X, Y):
 		self.__testFreezeModel()
 		self.__testNetworkHasNotCompiled()
 
@@ -242,9 +264,17 @@ class Network(object):
 
 		# Comprovamos que hemos llenado todos los inputs
 		self.__testAllInputsHaveData(only_no_targets=False)
+		
 		# definimos el tipo tamano del batch
-		self.batch_size = self.inputs[0].batchSize()
+		self.batch_size = self.inputs[0].batch_size
 		self.__forward()
+
+	def validate_batch(self, X, Y):
+		self.__validate_batch(X, Y)
+		return self.get_losses(), self.get_metrics
+
+	def test_batch(self, X, Y):
+		return self.validate_batch(X, Y)
 
 	def fit(self, X, Y, epochs, batch_size, Xval=None, Yval=None, params={'shuffle': True, 'iterations': {'training': None, 'validation': None}}, callbacks=None):
 		self.__testFreezeModel()
@@ -351,7 +381,7 @@ class Network(object):
 						c.excecute_pre_batch(self.SPLIT.VALIDATION, iteration, total_iterations_val, batch_index, total_batchs_val, batch_size, epoch, total_epochs)
 					
 					# Entrenamos con ese batch
-					self.validate_batch(X_batch, Y_batch)
+					self.__validate_batch(X_batch, Y_batch)
 
 					# Ejecutamos callbacks
 					end_time = time.time()
@@ -370,7 +400,7 @@ class Network(object):
 		self.__testAllInputsHaveData(only_no_targets=True)
 		
 		# definimos el tipo tamano del batch
-		self.batch_size = self.inputs[0].batchSize()
+		self.batch_size = self.inputs[0].batch_size
 		self.__forward()
 		
 		self.predict_flag = False
@@ -381,14 +411,21 @@ class Network(object):
 		UTILES:
 			
 	"""
-	def monitoring(self):
+	def get_losses(self):
 		self.__testFreezeModel()
 		self.__testNetworkHasNotCompiled()
+		return dict([(l.name, l.temp_forward_result) for l in self.losses])
 
-		print('Losses:', dict([(l.name, l.temp_forward_result) for l in self.losses]))
-		print('Metrics:', dict([(m.name, m.temp_forward_result) for m in self.metrics]))
+	def get_metrics(self):
+		self.__testFreezeModel()
+		self.__testNetworkHasNotCompiled()
+		return dict([(m.name, m.temp_forward_result) for m in self.metrics])
+		
+	def monitoring(self):
+		print('Losses:', self.get_losses())
+		print('Metrics:', self.get_metrics())
 
-	def plot(self, filestr):
+	def plot(self, filename):
 		self.__testNetworkHasNotCompiled()
 
 		graph = pydot.Dot(graph_type='digraph')
@@ -416,7 +453,7 @@ class Network(object):
 			for nn in n.nexts:
 				graph.add_edge(pydot.Edge(nodes[n], nodes[nn]))
 		
-		graph.write_png(filestr)
+		graph.write_png(filename)
 
 	def get_weights(self, label):
 		self.__testNetworkHasNotCompiled()
@@ -440,35 +477,44 @@ class Network(object):
 
 		# Nodos
 		nodes_json = {}
-		nodes_id_dict = {}
-		id_nodes_dict = {}
+		id_to_nodes = {}
+		nodes_to_id = {}
 		for i, n in enumerate(self.nodes.values()):
-			if not freeze_model or not isinstance(n.layer, AvoidFreeze):
-				nodes_id_dict[i] = n
-				id_nodes_dict[n] = i
-				nodes_json[i] = n.save(nodes_h5.create_group(str(i)))
+			if freeze_model and (isinstance(n.layer, AvoidFreeze) or all([isinstance(nn.layer, AvoidFreeze) for nn in n.prevs + n.nexts])):
+				continue
+			
+			id_to_nodes[i] = n
+			nodes_to_id[n] = i
+			nodes_json[i] = n.save(nodes_h5.create_group(str(i)))
 
 		# Relaciones (se almacenan como un diccionario)
 		relations_json = {}
-		for i, n in nodes_id_dict.items():
-			if not freeze_model or not isinstance(n.layer, AvoidFreeze):
-				relations_json[i] = []
-				for nn in n.nexts:
-					if not freeze_model or not isinstance(nn.layer, AvoidFreeze):
-						j = id_nodes_dict[nn]
-						relations_json[i].append(j)
+		for i, n in id_to_nodes.items():
+			if freeze_model and isinstance(n.layer, AvoidFreeze):
+				continue
+			
+			relations_json[i] = []
+			for nn in n.nexts:
+				if freeze_model and isinstance(nn.layer, AvoidFreeze):
+					continue
+			
+				relations_json[i].append(nodes_to_id[nn])
 
 		# Inputs
 		inputs_json = []
 		for n in self.inputs:
-			if not freeze_model or not isinstance(n.layer, AvoidFreeze):
-				inputs_json.append(id_nodes_dict[n])
+			if freeze_model and isinstance(n.layer, AvoidFreeze):
+				continue
+			
+			inputs_json.append(nodes_to_id[n])
 
 		# Outputs
 		outputs_json = []
 		for n in self.outputs:
-			if not freeze_model or not isinstance(n.layer, AvoidFreeze):
-				outputs_json.append(id_nodes_dict[n])
+			if freeze_model and isinstance(n.layer, AvoidFreeze):
+				continue
+			
+			outputs_json.append(nodes_to_id[n])
 		
 		# Json
 		network_json = {
@@ -479,12 +525,13 @@ class Network(object):
 			'relations': relations_json,
 			'freeze_model': freeze_model
 		}
+
 		if not freeze_model:
 			# Losses
-			losses_json = [id_nodes_dict[n] for n in self.losses]
+			losses_json = [nodes_to_id[n] for n in self.losses]
 			
 			# Metricas
-			metrics_json = [id_nodes_dict[n] for n in self.metrics]
+			metrics_json = [nodes_to_id[n] for n in self.metrics]
 			
 			# Optimizador
 			optimizer_json = self.optimizer.save(hf.create_group("optimizer"))
@@ -502,18 +549,18 @@ class Network(object):
 		self.status = data['status']
 
 		# NODES
-		id_nodes_dict = {}
+		id_to_nodes = {}
 		self.nodes = {}
 		for i, n in data['nodes'].items():
 			node = Node.load_static(self, n, hf['nodes'][i])
-			id_nodes_dict[int(i)] = node
+			id_to_nodes[int(i)] = node
 			self.nodes[node.label] = node
 
 		# RELATIONS
 		for i in data['relations'].keys():
 			iint = int(i)
 			for j in data['relations'][i]:
-				id_nodes_dict[iint].addNext(id_nodes_dict[j])
+				id_to_nodes[iint].addNext(id_to_nodes[j])
 
 		# Realizamos parte de la compilacion, esta no sobreescribe elementos cargados.
 		for n in self.nodes.values():
@@ -528,16 +575,16 @@ class Network(object):
 			n.determineNode()
 
 		# IN & OUT
-		self.inputs = [id_nodes_dict[i] for i in data['inputs']]
-		self.outputs = [id_nodes_dict[i] for i in data['outputs']]
+		self.inputs = [id_to_nodes[i] for i in data['inputs']]
+		self.outputs = [id_to_nodes[i] for i in data['outputs']]
 		if data['freeze_model']:
 			self.status = self.STATUS.FREEZE
 		else:
 			# LOSSES
-			self.losses = [id_nodes_dict[i] for i in data['losses']]
+			self.losses = [id_to_nodes[i] for i in data['losses']]
 
 			# METRICS
-			self.metrics = [id_nodes_dict[i] for i in data['metrics']]
+			self.metrics = [id_to_nodes[i] for i in data['metrics']]
 
 			# OPTIMIZER
 			self.optimizer = Optimizer.load_static(data['optimizer'], hf['optimizer'])

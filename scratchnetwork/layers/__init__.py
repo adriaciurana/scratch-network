@@ -1,4 +1,5 @@
 from .input import Input
+from .target import Target
 from .fc import FC
 from .relu import ReLU
 from .prelu import PReLU

@@ -29,6 +29,10 @@ class Exceptions:
 		pass
 	class NetworkAreFreezeModel(Exception):
 		pass
+	class InputNotInInputs(Exception):
+		pass
+	class TargetInInputs(Exception):
+		pass
 
 	# Pipeline
 	class PipelineInputAndOutputFunction(Exception):

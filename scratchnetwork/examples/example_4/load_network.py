@@ -4,6 +4,8 @@ import numpy as np
 sys.path.append(os.path.dirname(__file__)+"../../../")
 from scratchnetwork import Network
 
+num_examples = 1000
+
 # MNIST LOAD
 from mnist import MNIST
 mndata = MNIST('../datasets/mnist/data')
@@ -30,8 +32,9 @@ Confusion Matrix:
  [   2    1    0    3    3    4    0    6    1  989]]
 """
 net.load('example.h5')
+print('Loaded...')
 net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
-out = net.predict({'Input': images_test})
+out = net.predict({'Input': images_test[:num_examples]})
 import matplotlib.pylab as plt
 from random import shuffle
 rrand = list(range(images_test.shape[0]))[:10]
@@ -42,11 +45,12 @@ for i in rrand:
 	# plot
 	plt.title("number: "+str(o))
 	plt.imshow(images_test[i][:,:,0], cmap='gray')
+	plt.draw()
 	plt.show(block = False)
-	while plt.waitforbuttonpress() is None:
+	while plt.waitforbuttonpress(0) is None:
 		pass
 
-np.set_printoptions(threshold=np.nan)
+"""np.set_printoptions(threshold=np.nan)
 a = out['Output']
 b = labels_test
 eq = a == b
@@ -55,3 +59,4 @@ from sklearn.metrics import confusion_matrix
 print('Accuracy: ' + str(accuracy))
 print('Confusion Matrix:')
 print(confusion_matrix(b, a))
+"""

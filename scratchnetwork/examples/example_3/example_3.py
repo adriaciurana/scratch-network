@@ -53,7 +53,6 @@ for i in range(10000):
 	batch_index += batch_size
 	if batch_index >= a.shape[0]:
 		batch_index = 0
-	if i % 500 == 0:
-		net.monitoring()
+	net.monitoring()
 out = net.predict({'Input': a})
 print(np.transpose(np.vstack((out['Output'].flatten(), b.flatten()))))
