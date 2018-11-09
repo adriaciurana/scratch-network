@@ -19,18 +19,18 @@ labels_test = np.array(labels_test, dtype=np.int32).reshape(-1, 1)
 net = Network()
 # DESCARGAR LOS PESOS EN: https://drive.google.com/file/d/1DeewIZLeeEUqVIsWrcPwc1Y3zr7eFUDA/view?usp=sharing
 """
-Accuracy: 0.9903
+Accuracy: 0.9909
 Confusion Matrix:
-[[ 976    0    0    0    0    0    2    1    1    0]
- [   0 1130    2    1    0    1    1    0    0    0]
- [   2    1 1023    0    1    0    0    5    0    0]
- [   1    0    1 1001    0    2    0    3    2    0]
- [   0    0    0    0  973    0    1    0    2    6]
- [   2    0    0    3    0  884    2    0    0    1]
- [   6    3    0    0    1    1  947    0    0    0]
- [   0    1    3    2    1    0    0 1018    2    1]
- [   3    1    2    2    0    0    0    2  962    2]
- [   2    1    0    3    3    4    0    6    1  989]]
+[[ 976    0    1    0    0    0    1    1    1    0]
+ [   0 1130    2    1    0    0    2    0    0    0]
+ [   1    0 1027    0    0    0    0    4    0    0]
+ [   0    0    3 1004    0    1    0    0    2    0]
+ [   0    0    1    0  972    0    1    0    1    7]
+ [   2    0    0    3    0  883    2    0    2    0]
+ [   5    2    0    0    1    3  944    0    3    0]
+ [   1    0    9    2    0    0    0 1013    1    2]
+ [   2    0    1    1    1    0    1    1  965    2]
+ [   1    1    0    0    2    3    0    4    3  995]]
 """
 net.load('example.h5')
 print('Loaded...')
@@ -57,5 +57,4 @@ accuracy = np.sum(eq)/eq.shape[0]
 from sklearn.metrics import confusion_matrix
 print('Accuracy: ' + str(accuracy))
 print('Confusion Matrix:')
-print(confusion_matrix(b, a))
-"""
+print(confusion_matrix(b, a))"""
