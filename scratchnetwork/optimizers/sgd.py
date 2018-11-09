@@ -2,6 +2,11 @@ from .optimizer import Optimizer
 import numpy as np
 from ..backend.misc import Misc
 class SGD(Optimizer):
+	# Elementos que se deben inicializar siempre
+	def init(self):
+		super(SGD, self).init(['iweights'])
+		self.iweights = {}
+
 	def __init__(self, lr=1e-2, mu=0.9, clip_norm=1, decay=0., nesterov=False):
 		super(SGD, self).__init__()
 		self.lr = lr
@@ -9,7 +14,6 @@ class SGD(Optimizer):
 		self.mu = mu
 		self.clip_norm = clip_norm
 		self.nesterov = nesterov
-		self.iweights = {}
 	
 	def step(self, label, weight_name, dweight):
 		weight_name = str(label) + '_' + weight_name

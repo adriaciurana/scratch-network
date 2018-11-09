@@ -1,12 +1,18 @@
 from .optimizer import Optimizer
 import numpy as np
+from ..backend.misc import Misc
 class AdaGrad(Optimizer):
+	# Elementos que se deben inicializar siempre
+	def init(self):
+		super(AdaGrad, self).init(['g2'])
+		self.g2 = {}
+
 	def __init__(self, lr=1e-2, clip_norm=1, decay=0.):
 		super(AdaGrad, self).__init__()
+		self.init()
 		self.lr = lr
 		self.decay = decay
 		self.clip_norm = clip_norm
-		self.g2 = {}
 	
 	def step(self, label, weight_name, dweight):
 		weight_name = str(label) + '_' + weight_name

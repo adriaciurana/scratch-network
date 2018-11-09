@@ -456,6 +456,25 @@ class Network(object):
 		for n in self.nodes.values():
 			for nn in n.nexts:
 				graph.add_edge(pydot.Edge(nodes[n], nodes[nn]))
+
+		if self.status != self.STATUS.FREEZE:
+			params_html = ''
+			is_first = True
+			for param in self.optimizer.__dict__:
+				if param in self.optimizer.exclude_params_plot + ['exclude_params_plot']:
+					continue
+				if is_first:
+					is_first = False
+					params_html += '<tr><td border="1" sides="T">'+ param +': ' + str(getattr(self.optimizer, param)) + '</td></tr>';
+				else:
+					params_html += '<tr><td border="1" sides="T" style="dashed">'+ param +': ' + str(getattr(self.optimizer, param)) + '</td></tr>';
+
+			graph.add_node(pydot.Node(len(self.nodes.values()), label=
+				u'<<table border="1" cellspacing="0"> \
+					<tr><td border="1" sides="B" bgcolor="#000"><font color="#ffffff">Optimizer: '+self.optimizer.__class__.__name__+'</font></td></tr> \
+					'+ params_html +'\
+				</table>>'))
+
 		
 		graph.write_png(filename)
 
