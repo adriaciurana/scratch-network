@@ -9,15 +9,15 @@ from scratchnetwork.metrics import MRSE
 from scratchnetwork.optimizers import SGD
 
 net = Network()
-inputX = net.Node("Input", Input, [20, 20, 1])
-inputY = net.Node("Y", Input, [10, 10, 1])
+inputX = net.Node(Input, "Input", [20, 20, 1])
+inputY = net.Node(Input, "Y", [10, 10, 1])
 
-N1 = net.Node("Block 1: Conv2D", Conv2D, 1, (3, 3), (1, 1), 'valid')
-N2 = net.Node("Block 1: Pooling2D", Pooling2D, 'max', (5, 5), (1, 1), 'valid')
-N3 = net.Node("Output", Conv2D, 1, (5, 5), (1, 1), 'valid')
+N1 = net.Node(Conv2D, "Block 1: Conv2D", 1, (3, 3), (1, 1), 'valid')
+N2 = net.Node(Pooling2D, "Block 1: Pooling2D", 'max', (5, 5), (1, 1), 'valid')
+N3 = net.Node(Conv2D, "Output", 1, (5, 5), (1, 1), 'valid')
 
-L1 = net.Node("MSE", MSE)
-M1 = net.Node("MRSE", MRSE)
+L1 = net.Node(MSE, "MSE")
+M1 = net.Node(MRSE, "MRSE")
 
 inputX.addNext(N1)
 N1.addNext(N2)

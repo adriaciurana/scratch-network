@@ -47,7 +47,7 @@ class Network(object):
 
 		self.batch_size = 0
 
-	def Node(self, name, layer, *layer_args, **layer_kwargs):
+	def Node(self, layer, name, *layer_args, **layer_kwargs):
 		for n in self.nodes.values():
 			if n.name == name:
 				raise NameError('El nombre de esta capa ya existe')
@@ -61,11 +61,11 @@ class Network(object):
 			self.nodes[node.label] = node
 			return node
 
-	def add(self, name, layer, *layer_args, **layer_kwargs):
-		return self.Node(name, layer, *layer_args, **layer_kwargs)
+	def add(self, layer, name, *layer_args, **layer_kwargs):
+		return self.Node(layer, name, *layer_args, **layer_kwargs)
 
-	def __call__(self, name, layer, *layer_args, **layer_kwargs):
-		return self.Node(name, layer, *layer_args, **layer_kwargs)
+	def __call__(self, layer, name, *layer_args, **layer_kwargs):
+		return self.Node(layer, name, *layer_args, **layer_kwargs)
 
 	"""
 		COMPILE:

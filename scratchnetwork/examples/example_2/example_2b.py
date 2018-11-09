@@ -10,13 +10,13 @@ from scratchnetwork.metrics import MRSE
 from scratchnetwork.optimizers import SGD
 
 net = Network()
-inputX = net.Node("Input", Input, [10, 10, 1])
-inputY = net.Node("Y", Input, [3, 3, 1])
+inputX = net.Node(Input, "Input", [10, 10, 1])
+inputY = net.Node(Input, "Y", [3, 3, 1])
 
-B = net.Node("Output", Conv2D, 1, (5, 5), (2, 2), 'valid')
+B = net.Node(Conv2D, "Output", 1, (5, 5), (2, 2), 'valid')
 
-L1 = net.Node("MSE", MSE)
-M1 = net.Node("MRSE", MRSE)
+L1 = net.Node(MSE, "MSE")
+M1 = net.Node(MRSE, "MRSE")
 
 inputX.addNext(B)
 

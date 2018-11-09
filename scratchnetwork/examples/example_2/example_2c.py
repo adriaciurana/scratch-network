@@ -12,17 +12,17 @@ from scratchnetwork.optimizers import SGD
 UNIQUE = True
 
 net = Network()
-inputX = net.Node("Input", Input, [10, 10, 1])
-inputY = net.Node("Y", Input, [6, 6, 1])
+inputX = net.Node(Input, "Input", [10, 10, 1])
+inputY = net.Node(Input, "Y", [6, 6, 1])
 
 if UNIQUE:
-	C = net.Node("Output", Conv2D, 1, (5, 5), (1, 1), 'valid')
+	C = net.Node(Conv2D, "Output", 1, (5, 5), (1, 1), 'valid')
 else:
-	B = net.Node("B", Conv2D, 1, (3, 3), (1, 1), 'valid')
-	C = net.Node("Output", Conv2D, 1, (3, 3), (1, 1), 'valid')
+	B = net.Node(Conv2D, "B", 1, (3, 3), (1, 1), 'valid')
+	C = net.Node(Conv2D, "Output", 1, (3, 3), (1, 1), 'valid')
 
-L1 = net.Node("MSE", MSE)
-M1 = net.Node("MRSE", MRSE)
+L1 = net.Node(MSE, "MSE")
+M1 = net.Node(MRSE, "MRSE")
 
 if UNIQUE:
 	inputX.addNext(C)

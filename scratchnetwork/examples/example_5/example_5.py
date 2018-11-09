@@ -3,7 +3,7 @@ import numpy as np
 from mnist import MNIST
 sys.path.append(os.path.dirname(__file__)+"../../../")
 from scratchnetwork import Network
-from scratchnetwork.layers import Input, FC, Conv2D, Pooling2D, DropOut, ReLU, Flatten, Softmax, OneHotDecode
+from scratchnetwork.layers import Input, FC, Conv2D, Pooling2D, DropOut, ReLU, Flatten, Softmax, OneHotDecode, Concat
 from scratchnetwork.losses import SoftmaxCrossEntropy
 from scratchnetwork.metrics import Accuracy
 from scratchnetwork.optimizers import SGD, AdaGrad
@@ -21,40 +21,39 @@ images_train, labels_train = np.reshape(np.array(images_train), [-1, 28, 28]), n
 
 images_train = (np.array(np.expand_dims(images_train, axis=-1), dtype=np.float64) - 128)/128
 labels_train = np.array(labels_train, dtype=np.int32).reshape(-1, 1)
-#labels_train = np.array([[float(m == b) for m in range(10)] for b in labels_train], dtype=np.float64)
 
 # Network
 net = Network()
-inputX = net.Node("Input", Input, [28, 28, 1])
-inputY = net.Node("Label", Input, [1])
+inputX = net.Node(Input, "Input", [28, 28, 1])
+inputY = net.Node(Input, "Label", [1])
 
-o = net.Node("Block 1: Conv2D", Conv2D, num_filters=32, kernel_size=(3,3), params={'regularizator': LR1})(inputX)
-o = net.Node("Block 1: ReLU", ReLU)(o)
+o = net.Node(Conv2D, "Block 1: Conv2D", num_filters=32, kernel_size=(3,3), params={'regularizator': LR1})(inputX)
+o = net.Node(ReLU, "Block 1: ReLU")(o)
 
 def creator(net):
-	i = net.Node("Block 2: Conv2D", Conv2D, num_filters=64, kernel_size=(3,3), params={'regularizator': LR1})
-	o = net.Node("Block 2: ReLU", ReLU)(i)
-	o = net.Node("Block 2: Maxpooling", Pooling2D, "max", pool_size=(2, 2))(o)
-	o = net.Node("Block 2: Dropout", DropOut, 0.25)(o)
-	o = net.Node("Block 2: Flatten", Flatten)(o)
+	i = net.Node(Conv2D, "Block 2: Conv2D", num_filters=64, kernel_size=(3,3), params={'regularizator': LR1})
+	o = net.Node(ReLU, "Block 2: ReLU")(i)
+	o = net.Node(Pooling2D, "Block 2: Maxpooling", "max", pool_size=(2, 2))(o)
+	o = net.Node(DropOut, "Block 2: Dropout", 0.25)(o)
+	o = net.Node(Flatten, "Block 2: Flatten")(o)
 	return i, o
-block = net.Node("Pipeline", Pipeline, creator=creator)
+block = net.Node(Pipeline, "Pipeline", creator=creator)
 block1 = block.copy(reuse=False)(o)
 block2 = block.copy(reuse=False)(o)
 
-o = net.Node("Concat", Concat, axis=0)(block1, block2)
-ço = net.Node("FC 1: FC", FC, 128, params={'regularizator': LR1})(o)
-o = net.Node("FC 1: ReLU", ReLU)(o)
-o = net.Node("FC 1: Dropout", DropOut, 0.5)(o)
+o = net.Node(Concat, "Concat", axis=0)(block1, block2)
+ço = net.Node(FC, "FC 1: FC", 128, params={'regularizator': LR1})(o)
+o = net.Node(ReLU, "FC 1: ReLU")(o)
+o = net.Node(DropOut, "FC 1: Dropout", 0.5)(o)
 
-FC2 = net.Node("FC 2: FC ", FC, 10, params={'regularizator': LR1})(o)
-FC2softmax = net.Node("FC 2: Softmax", Softmax)(FC2)
-output = net.Node("Output", OneHotDecode)(FC2softmax)
+FC2 = net.Node(FC, "FC 2: FC ", 10, params={'regularizator': LR1})(o)
+FC2softmax = net.Node(Softmax, "FC 2: Softmax")(FC2)
+output = net.Node(OneHotDecode, "Output")(FC2softmax)
 
-L1 = net.Node("Cross Entropy", SoftmaxCrossEntropy)(FC2, inputY)
-M1 = net.Node("Accuracy", Accuracy)(output, inputY)
+L1 = net.Node(SoftmaxCrossEntropy, "Cross Entropy")(FC2, inputY)
+M1 = net.Node(Accuracy, "Accuracy")(output, inputY)
 
-net.compile(inputs=[inputX], outputs=[output], losses=[L1], metrics=[M1], optimizer=SGD(lr=1e-2, clip=None))
+net.compile(inputs=[inputX], outputs=[output], losses=[L1], metrics=[M1], optimizer=SGD(lr=1e-2, clip_norm=None))
 net.plot(os.path.basename(sys.argv[0]).split(".")[0]+".png")
 
 # Llenamos

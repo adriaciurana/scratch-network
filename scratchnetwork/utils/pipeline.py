@@ -79,7 +79,13 @@ class Pipeline(object):
 		def __init__(self):
 			self.nodes = {}
 
-		def Node(self, name, layer, *layer_args, **layer_kwargs):
+		def Node(self, layer, name, *layer_args, **layer_kwargs):
 			node = Node(self, name, layer, layer_args, layer_kwargs)
 			self.nodes[node.label] = node
 			return node
+
+		def add(self, layer, name, *layer_args, **layer_kwargs):
+			return self.Node(layer, name, *layer_args, **layer_kwargs)
+
+		def __call__(self, layer, name, *layer_args, **layer_kwargs):
+			return self.Node(layer, name, *layer_args, **layer_kwargs)
