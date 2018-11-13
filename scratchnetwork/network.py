@@ -105,6 +105,33 @@ class Network(object):
 			# empezamos a recorrer
 			exploreNode(n)
 
+	def __testPruneUselessNodes(self):
+		def pruneNode(node):
+			for p in node.prevs:
+				p.nexts.remove(node)
+			del self.nodes[node.label]
+			
+		def exploreNode(node):
+			if len(node.nexts) == 0: # es hoja
+				if node in self.metrics or node in self.losses or node in self.outputs:
+					return False
+				else:
+					pruneNode(node)
+					return True
+
+			prune = True
+			for n in copy.copy(node.nexts):
+				prune &= exploreNode(n)
+			
+			if prune:
+				pruneNode(node)
+
+			return prune
+
+		# Solo los nodos que lleguen al output, metric o loss tienen que existir.
+		for n in self.inputs:
+			exploreNode(n)
+
 	def __testAllInputsHaveData(self, only_no_targets=False):
 		check = True
 		for n in self.nodes_with_only_outputs.values():
@@ -121,6 +148,9 @@ class Network(object):
 
 	def __start(self):
 		# iniciamos
+		# Se eliminan todos los nodos inutiles
+		self.__testPruneUselessNodes()
+
 		# todos los nodos que solo tengan salidas y no esten en inputs deberan tener el compute_forward_in_prediction = False
 		# Porque no participaran en la prediccion
 		for n in self.nodes_with_only_outputs.values():
@@ -335,7 +365,6 @@ class Network(object):
 			iteration = 0
 			# Empezamos las iteraciones
 			for batch_index in range(0, total_batchs, batch_size):
-				start_time = time.time()
 				# Definimos los intervalos del batch
 				start = batch_index
 				end = min(batch_index + batch_size, total_batchs)
@@ -352,9 +381,8 @@ class Network(object):
 				self.train_batch(X_batch, Y_batch)
 				
 				# Ejecutamos callbacks
-				end_time = time.time()
 				for c in callbacks:
-					c.excecute_post_batch(self.SPLIT.TRAINING, iteration, total_iterations, batch_index, total_batchs, batch_size, epoch, total_epochs, end_time - start_time)
+					c.excecute_post_batch(self.SPLIT.TRAINING, iteration, total_iterations, batch_index, total_batchs, batch_size, epoch, total_epochs)
 				iteration += 1
 				
 			# VALIDATION
@@ -371,7 +399,6 @@ class Network(object):
 				iteration = 0
 				# Empezamos las iteraciones
 				for batch_index in range(0, total_batchs_val, batch_size):
-					start_time = time.time()
 					# Definimos los intervalos del batch
 					start = batch_index
 					end = min(batch_index + batch_size, total_batchs)
@@ -388,9 +415,8 @@ class Network(object):
 					self.__validate_batch(X_batch, Y_batch)
 
 					# Ejecutamos callbacks
-					end_time = time.time()
 					for c in callbacks:
-						c.excecute_post_batch(self.SPLIT.VALIDATION, iteration, total_iterations_val, batch_index, total_batchs_val, batch_size, epoch, total_epochs, end_time - start_time)
+						c.excecute_post_batch(self.SPLIT.VALIDATION, iteration, total_iterations_val, batch_index, total_batchs_val, batch_size, epoch, total_epochs)
 					iteration += 1
 
 	def predict(self, X):

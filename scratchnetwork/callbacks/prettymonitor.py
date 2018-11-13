@@ -48,9 +48,10 @@ class PrettyMonitor(Callback):
 			self.metrics_monitoring_acc[k] = 0
 
 	def excecute_pre_batch(self, split, iteration, total_iterations, batch_index, total_batchs, batch_size, epoch, total_epochs):
-		pass
+		self.start_time = time.time()
 
-	def excecute_post_batch(self, split, iteration, total_iterations, batch_index, total_batchs, batch_size, epoch, total_epochs, elapsed_time):
+	def excecute_post_batch(self, split, iteration, total_iterations, batch_index, total_batchs, batch_size, epoch, total_epochs):
+		elapsed_time = time.time() - self.start_time
 		if (split == self.network.SPLIT.TRAINING and self.split == self.TRAINING) or \
 			(split == self.network.SPLIT.VALIDATION and self.split == self.VALIDATION) or \
 			self.split == self.TRAINING_AND_VALIDATION:

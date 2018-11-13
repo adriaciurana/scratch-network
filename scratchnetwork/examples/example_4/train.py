@@ -36,7 +36,7 @@ o = net(Flatten, "Block 2: Flatten")(o)
 
 o = net(FC, "FC 1: FC", 128, params={'regularizator': LR1})(o)
 o = net(ReLU, "FC 1: ReLU")(o)
-o = net(DropOut, "FC 1: Dropout", 0.5)(o)
+o = net(DropOut, "FC 1: Dropout1", 0.5)(o)
 
 FC2 = net(FC, "FC 2: FC", 10, params={'regularizator': LR1})(o)
 FC2softmax = net(Softmax, "FC 2: Softmax")(FC2)

@@ -8,5 +8,5 @@ class Callback(object):
 	def excecute_pre_batch(self, split, iteration, total_iterations, batch_index, total_batchs, batch_size, epoch, total_epochs):
 		pass
 	
-	def excecute_post_batch(self, split, iteration, total_iterations, batch_index, total_batchs, batch_size, epoch, total_epochs, elapsed_time):
+	def excecute_post_batch(self, split, iteration, total_iterations, batch_index, total_batchs, batch_size, epoch, total_epochs):
 		pass
