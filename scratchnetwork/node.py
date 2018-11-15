@@ -109,9 +109,10 @@ class Node(object):
 		return self.layer.forward(inputs)
 		
 	def forward(self):
+		if self.network.predict_flag and not self.compute_forward_in_prediction:
+			return
+		
 		# Si esta en modo no prediccion el forward se para en la Loss
-		#if self.network.predict_flag and not self.compute_forward_in_prediction:
-		# 	return
 		result = self.computeForward()
 		self.temp_forward_result = result
 		for n in self.nexts:
